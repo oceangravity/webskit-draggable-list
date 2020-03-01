@@ -1,5 +1,5 @@
 <template>
-  <ul class="wk-ul">
+  <ul class="wk-ul" ref="ul">
     <li v-for="(item, index) in list" :key="index" :index="index" >{{ item.name }}</li>
   </ul>
 </template>
@@ -35,6 +35,7 @@ export default {
       type: Object,
       default: function () {
         return {
+          edgeSize: 20,
           size: 120,
           arcColor: 'rgb(53, 57, 60)',
           arcBackgroundColor: '#9b9bb5',
@@ -57,7 +58,8 @@ export default {
       let dragging = false
       let dragAction = 'STOP'
       let finalIndex
-      let data = [];
+      let data = []
+      let timer;
 
       [].forEach.call(document.querySelectorAll('li'), (el) => {
         el.originalRect = el.getBoundingClientRect()
@@ -81,7 +83,6 @@ export default {
           clone.style.heith = `${current.offsetHeight}px`
           clone.style.transition = `none`
           clone.style.pointerEvents = `none`
-
           document.body.appendChild(clone)
           initialPos = { x: e.clientX, y: e.clientY }
           current.style.pointerEvents = `none`
@@ -127,11 +128,6 @@ export default {
       const mousemove = e => {
         clientX = e.clientX
         clientY = e.clientY
-
-        if (!initialPos) {
-          return
-        }
-
         if ((dragAction === 'PRE-MOVE') && (e.clientX > initialPos.x + 2 || e.clientY > initialPos.y + 2 || e.clientX < initialPos.x - 2 || e.clientY < initialPos.y - 2)) {
           dragging = true
           let x = clientX - initialPos.x
@@ -139,8 +135,6 @@ export default {
           clone.style.transform = `translate3d(${x}px, ${y}px, 0px)`
         }
       }
-
-      document.addEventListener('mousemove', mousemove)
 
       const getOverlaps = elements => {
         const rect1 = clone.getBoundingClientRect()
@@ -189,52 +183,28 @@ export default {
         if (!collideElement.busy) {
           if (rect1.top < rect2.top && rect2.top < rect1.top + collideElement.offsetHeight / 2) {
             if (collideElement.moved) {
-              data.push({
-                index: collideIndex,
-                side: 'INIT'
-              })
+              data.push({ index: collideIndex, side: 'INIT' })
             } else {
               if (overlaps.length > 1) {
-                data.push({
-                  index: parseInt(overlaps[overlaps.length - 2].getAttribute('index'), 10),
-                  side: 'POST'
-                })
+                data.push({ index: parseInt(overlaps[overlaps.length - 2].getAttribute('index'), 10), side: 'POST' })
               } else {
-                data.push({
-                  index: collideIndex,
-                  side: 'PRE'
-                })
+                data.push({ index: collideIndex, side: 'PRE' })
               }
             }
           } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + clone.offsetHeight) {
             if (collideElement.moved && currentIndex > collideIndex) {
-              data.push({
-                index: collideIndex,
-                side: 'INIT'
-              })
+              data.push({ index: collideIndex, side: 'INIT' })
             } else {
               if (overlaps.length > 1) {
-                data.push({
-                  index: parseInt(overlaps[1].getAttribute('index'), 10),
-                  side: 'PRE'
-                })
+                data.push({ index: parseInt(overlaps[1].getAttribute('index'), 10), side: 'PRE' })
               } else {
-                data.push({
-                  index: collideIndex,
-                  side: 'POST'
-                })
+                data.push({ index: collideIndex, side: 'POST' })
               }
             }
           } else if (rect2.top < rect1.top + collideElement.offsetHeight / 2) {
-            data.push({
-              index: collideIndex,
-              side: 'PRE'
-            })
+            data.push({ index: collideIndex, side: 'PRE' })
           } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + clone.offsetHeight) {
-            data.push({
-              index: collideIndex,
-              side: 'POST'
-            })
+            data.push({ index: collideIndex, side: 'POST' })
           }
         }
 
@@ -243,16 +213,9 @@ export default {
           let intersectIndex = data[0].index
           let lastNode = data[0]
           let side
-
-          if (currentIndex > lastNode.index) {
-            side = 'PRE'
-          } else {
-            side = 'POST'
-          }
-
           let start = currentIndex < intersectIndex ? currentIndex : intersectIndex
           let end = currentIndex > intersectIndex ? currentIndex : intersectIndex
-
+          side = currentIndex > lastNode.index ? 'PRE' : 'POST'
           const pool = {}
           const poolArr = []
           for (let i = start; i <= end; i++) {
@@ -279,8 +242,6 @@ export default {
               finalIndex = currentIndex
             }
           }
-
-          // console.log(currentIndex, finalIndex);
 
           [].forEach.call(elements, (el) => {
             let uuid = parseInt(el.getAttribute('index'), 10)
@@ -315,7 +276,91 @@ export default {
             }
           })
         }
+
+        handleScroll()
         requestAnimationFrame(checker)
+      }
+
+      const handleScroll = () => {
+        const me = this
+        const event = { clientX: clientX, clientY: clientY }
+        if (!dragging) {
+          clearTimeout(timer)
+          return
+        }
+        const viewportX = event.clientX
+        const viewportY = event.clientY - me.$refs.ul.offsetTop
+        const viewportWidth = me.$refs.ul.clientWidth
+        const viewportHeight = me.$refs.ul.clientHeight
+        const edgeTop = me.options.edgeSize
+        const edgeLeft = me.options.edgeSize
+        const edgeBottom = viewportHeight - me.options.edgeSize
+        const edgeRight = viewportWidth - me.options.edgeSize
+        const isInLeftEdge = viewportX < edgeLeft
+        const isInRightEdge = viewportX > edgeRight
+        const isInTopEdge = viewportY < edgeTop
+        const isInBottomEdge = viewportY > edgeBottom
+
+        if (!(isInLeftEdge || isInRightEdge || isInTopEdge || isInBottomEdge)) {
+          return
+        }
+
+        const documentWidth = me.$refs.ul.scrollWidth
+        const documentHeight = me.$refs.ul.scrollHeight
+
+        const maxScrollX = documentWidth - viewportWidth
+        const maxScrollY = documentHeight - viewportHeight;
+
+        (function checkForWindowScroll () {
+          clearTimeout(timer)
+          if (adjustWindowScroll()) {
+            timer = setTimeout(checkForWindowScroll, 50)
+          }
+        })()
+
+        function adjustWindowScroll () {
+          const firstElement = me.$refs.ul.firstChild
+          const currentScrollX = Math.abs(firstElement.getBoundingClientRect().left - me.$refs.ul.getBoundingClientRect().left)
+          const currentScrollY = Math.abs(firstElement.getBoundingClientRect().top - me.$refs.ul.getBoundingClientRect().top)
+
+          const canScrollUp = currentScrollY > 0
+          const canScrollDown = currentScrollY < maxScrollY
+          const canScrollLeft = currentScrollX > 0
+          const canScrollRight = currentScrollX < maxScrollX
+          // eslint-disable-next-line no-unused-vars
+          let nextScrollX = currentScrollX
+          let nextScrollY = currentScrollY
+          const maxStep = 5
+          let intensity
+
+          if (isInLeftEdge && canScrollLeft) {
+            intensity = (edgeLeft - viewportX) / me.options.edgeSize
+            nextScrollX = nextScrollX - maxStep * intensity
+          } else if (isInRightEdge && canScrollRight) {
+            intensity = (viewportX - edgeRight) / me.options.edgeSize
+            nextScrollX = nextScrollX + maxStep * intensity
+          }
+
+          if (isInTopEdge && canScrollUp) {
+            intensity = (edgeTop - viewportY) / me.options.edgeSize
+            // if (intensity >= 0) intensity = 0.1
+            nextScrollY = nextScrollY - maxStep * intensity
+          } else if (isInBottomEdge && canScrollDown) {
+            intensity = (viewportY - edgeBottom) / me.options.edgeSize
+            // if (intensity >= 0.7) intensity = 0.7
+            nextScrollY = nextScrollY + maxStep * intensity
+          }
+
+          nextScrollX = Math.max(0, Math.min(maxScrollX, nextScrollX))
+          nextScrollY = Math.max(0, Math.min(maxScrollY, nextScrollY))
+
+          if (nextScrollY !== currentScrollY) {
+            me.$refs.ul.scrollTo(0, nextScrollY)
+            return true
+          } else {
+            return false
+          }
+        }
       }
 
       document.addEventListener('mouseup', async () => {
@@ -385,6 +430,7 @@ export default {
         })
       })
 
+      document.addEventListener('mousemove', mousemove)
       requestAnimationFrame(checker)
     })
   },
@@ -419,12 +465,13 @@ export default {
 
   ul {
     position: relative;
-    pointer-events: none;
     background-color: #f3f3f3;
     border: 1px solid #efefef;
     margin: 0 auto;
     padding: 0;
     width: 500px;
+    max-height: 300px;
+    overflow: auto;
   }
 
   li {
