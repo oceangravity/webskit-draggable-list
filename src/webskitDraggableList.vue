@@ -1,12 +1,6 @@
 <template>
   <ul class="wk-ul">
-    <li>Item 0</li>
-    <li>Item 1</li>
-    <li>Item 2</li>
-    <li style="height: 100px">Item 3</li>
-    <li>Item 4</li>
-    <li>Item 5</li>
-    <li>Item 6</li>
+    <li v-for="(item, index) in list" :key="index" :index="index" >{{ item.name }}</li>
   </ul>
 </template>
 
@@ -15,7 +9,19 @@ export default {
   name: 'WebskitDraggableList',
   data () {
     return {
-      dragging: false
+      dragging: false,
+      list: [
+        { name: 'Item 1' },
+        { name: 'Item 2' },
+        { name: 'Item 3' },
+        { name: 'Item 4' },
+        { name: 'Item 5' },
+        { name: 'Item 6' },
+        { name: 'Item 7' },
+        { name: 'Item 8' },
+        { name: 'Item 9' },
+        { name: 'Item 10' }
+      ]
     }
   },
   computed: {
@@ -41,21 +47,21 @@ export default {
     }
   },
   mounted () {
+    const me = this
     this.$nextTick(() => {
       let current
       let initialPos
       let clone
-      let index = 0
       let clientX = 0
       let clientY = 0
       let dragging = false
+      let dragAction = 'STOP'
+      let finalIndex
       let data = [];
 
-      [].forEach.call(document.querySelectorAll('li'), el => {
+      [].forEach.call(document.querySelectorAll('li'), (el) => {
+        el.originalRect = el.getBoundingClientRect()
         el.style.transform = 'translate3d(0px, 0px, 0px)'
-        el.setAttribute('index', index++)
-        el.setAttribute('o', el.getAttribute('index'))
-        el.originalIndex = el.getAttribute('index')
         el.addEventListener('transitionend', function (e) {
           if (e.propertyName === 'transform') {
             e.target.busy = false
@@ -83,7 +89,7 @@ export default {
           current.classList.add('current')
           current.style.opacity = `0`
           current.style.transition = `none`
-          dragging = true
+          dragAction = 'PRE-MOVE'
         })
       })
 
@@ -122,12 +128,16 @@ export default {
         clientX = e.clientX
         clientY = e.clientY
 
-        if (!initialPos || !dragging) {
+        if (!initialPos) {
           return
         }
-        let x = clientX - initialPos.x
-        let y = clientY - initialPos.y
-        clone.style.transform = `translate3d(${x}px, ${y}px, 0px)`
+
+        if ((dragAction === 'PRE-MOVE') && (e.clientX > initialPos.x + 2 || e.clientY > initialPos.y + 2 || e.clientX < initialPos.x - 2 || e.clientY < initialPos.y - 2)) {
+          dragging = true
+          let x = clientX - initialPos.x
+          let y = clientY - initialPos.y
+          clone.style.transform = `translate3d(${x}px, ${y}px, 0px)`
+        }
       }
 
       document.addEventListener('mousemove', mousemove)
@@ -158,7 +168,7 @@ export default {
 
         let o = getClosestElement(elements, x, y + clone.offsetHeight / 2)
 
-        if (parseInt(current.getAttribute('o'), 10) > parseInt(o.el.getAttribute('o'), 10)) {
+        if (parseInt(current.getAttribute('index'), 10) > parseInt(o.el.getAttribute('index'), 10)) {
           o = getClosestElement(elements, x, y)
         } else {
           o = getClosestElement(elements, x, y + clone.offsetHeight)
@@ -171,50 +181,65 @@ export default {
         }
 
         const collideElement = o.el
+        const collideIndex = parseInt(collideElement.getAttribute('index'), 10)
         const rect1 = collideElement.getBoundingClientRect()
         const rect2 = clone.getBoundingClientRect()
-        let currentIndex = parseInt(current.getAttribute('o'), 10)
+        let currentIndex = parseInt(current.getAttribute('index'), 10)
 
         if (!collideElement.busy) {
           if (rect1.top < rect2.top && rect2.top < rect1.top + collideElement.offsetHeight / 2) {
             if (collideElement.moved) {
               data.push({
-                index: parseInt(collideElement.getAttribute('o'), 10),
+                index: collideIndex,
                 side: 'INIT'
               })
             } else {
-              data.push({
-                index: parseInt(collideElement.getAttribute('o'), 10),
-                side: 'PRE'
-              })
+              if (overlaps.length > 1) {
+                data.push({
+                  index: parseInt(overlaps[overlaps.length - 2].getAttribute('index'), 10),
+                  side: 'POST'
+                })
+              } else {
+                data.push({
+                  index: collideIndex,
+                  side: 'PRE'
+                })
+              }
             }
           } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + clone.offsetHeight) {
-            if (collideElement.moved && currentIndex > parseInt(collideElement.getAttribute('o'), 10)) {
+            if (collideElement.moved && currentIndex > collideIndex) {
               data.push({
-                index: parseInt(collideElement.getAttribute('o'), 10),
+                index: collideIndex,
                 side: 'INIT'
               })
             } else {
-              data.push({
-                index: parseInt(collideElement.getAttribute('o'), 10),
-                side: 'POST'
-              })
+              if (overlaps.length > 1) {
+                data.push({
+                  index: parseInt(overlaps[1].getAttribute('index'), 10),
+                  side: 'PRE'
+                })
+              } else {
+                data.push({
+                  index: collideIndex,
+                  side: 'POST'
+                })
+              }
             }
           } else if (rect2.top < rect1.top + collideElement.offsetHeight / 2) {
             data.push({
-              index: parseInt(collideElement.getAttribute('o'), 10),
+              index: collideIndex,
               side: 'PRE'
             })
           } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + clone.offsetHeight) {
             data.push({
-              index: parseInt(collideElement.getAttribute('o'), 10),
+              index: collideIndex,
               side: 'POST'
             })
           }
         }
 
         if (data.length) {
-          let currentIndex = parseInt(current.getAttribute('o'), 10)
+          let currentIndex = parseInt(current.getAttribute('index'), 10)
           let intersectIndex = data[0].index
           let lastNode = data[0]
           let side
@@ -229,18 +254,36 @@ export default {
           let end = currentIndex > intersectIndex ? currentIndex : intersectIndex
 
           const pool = {}
+          const poolArr = []
           for (let i = start; i <= end; i++) {
             pool[i] = { index: i, side: side }
+            poolArr.push({ index: i, side: side })
           }
 
           if (side === 'PRE') {
             pool[start].side = data[0].side
+            poolArr[0].side = data[0].side
+            let prePool = poolArr.filter(i => i.side === 'PRE')
+            if (prePool) {
+              finalIndex = prePool[0].index
+            } else {
+              finalIndex = currentIndex
+            }
           } else {
             pool[end].side = data[0].side
+            poolArr[poolArr.length - 1].side = data[0].side
+            let prePool = poolArr.filter(o => o.side === 'POST')
+            if (prePool) {
+              finalIndex = prePool[prePool.length - 1].index
+            } else {
+              finalIndex = currentIndex
+            }
           }
 
+          // console.log(currentIndex, finalIndex);
+
           [].forEach.call(elements, (el) => {
-            let uuid = parseInt(el.getAttribute('o'), 10)
+            let uuid = parseInt(el.getAttribute('index'), 10)
             let item = pool[uuid]
             if (item && item.side === 'INIT' && el.moved) {
               el.moved = false
@@ -275,26 +318,71 @@ export default {
         requestAnimationFrame(checker)
       }
 
-      document.addEventListener('mouseup', () => {
-        dragging = false
-
-        if (current) {
-          current.classList.remove('current')
-          current.style.transform = `translate3d(0px, 0px, 0px)`
-          current.style.visibility = ``
-          current.style.transition = ``
-          current.style.pointerEvents = ``
-          current.style.opacity = ``
+      document.addEventListener('mouseup', async () => {
+        dragAction = 'STOP'
+        if (!dragging) {
+          [].forEach.call(document.querySelectorAll('li'), (el) => {
+            if (el) {
+              el.classList.remove('current')
+              el.style.visibility = ``
+              el.style.transition = ``
+              el.style.pointerEvents = ``
+              el.style.opacity = ``
+            }
+          })
+          clone && clone.parentNode && document.body.removeChild(clone)
+          return
         }
+        dragging = false
+        let currentIndex = parseInt(current.getAttribute('index'), 10)
+        await me.update(currentIndex, finalIndex)
 
-        [].forEach.call(document.querySelectorAll('li'), el => {
-          if (el) {
-            el.busy = false
-            el.style.pointerEvents = ``
+        me.$nextTick(() => {
+          let current = document.querySelector(`[index="${finalIndex}"]`)
+          let final = document.querySelector(`[index="${currentIndex}"]`)
+          current.style.visibility = `none`
+          current.style.transition = `none`
+          current.style.pointerEvents = `none`
+          current.style.opacity = `0`
+          if (currentIndex !== finalIndex) {
+            final.classList.remove('current')
+            final.style.visibility = ``
+            final.style.transition = ``
+            final.style.pointerEvents = ``
+            final.style.opacity = ``
           }
-        })
 
-        clone && clone.parentNode && document.body.removeChild(clone)
+          [].forEach.call(document.querySelectorAll('li'), (el) => {
+            if (el) {
+              el.busy = false
+              el.moved = false
+              el.style.pointerEvents = ``
+              el.style.transition = `none`
+              el.style.transform = `translate3d(0px, 0px, 0px)`
+            }
+          })
+
+          clone.style.top = `0`
+          clone.style.left = `0`
+          clone.style.transition = `300ms`
+          let originalRect = current.getBoundingClientRect()
+          clone.style.transform = `translate3d(${originalRect.left}px, ${originalRect.top}px, 0px)`
+
+          clone.addEventListener('transitionend', function () {
+            clone && clone.parentNode && document.body.removeChild(clone)
+            current.style.visibility = ``
+            current.style.transition = `none`
+            current.style.pointerEvents = ``
+            current.style.opacity = ``
+            setTimeout(() => {
+              [].forEach.call(document.querySelectorAll('li'), el => {
+                if (el) {
+                  el.style.transition = ``
+                }
+              })
+            }, 100)
+          }, false)
+        })
       })
 
       requestAnimationFrame(checker)
@@ -305,6 +393,9 @@ export default {
   watch: {
   },
   methods: {
+    update (from, to) {
+      this.list.splice(to, 0, this.list.splice(from, 1)[0])
+    }
   }
 }
 </script>
