@@ -1,5 +1,6 @@
 <template>
   <ul class="wk-ul" ref="ul">
+    <li ref="node" style="height: 0; padding: 0" class="top"></li>
     <li v-for="(item, index) in list" :key="index" :index="index" >{{ item.name }}</li>
   </ul>
 </template>
@@ -35,7 +36,7 @@ export default {
       type: Object,
       default: function () {
         return {
-          edgeSize: 20,
+          edgeSize: 100,
           size: 120,
           arcColor: 'rgb(53, 57, 60)',
           arcBackgroundColor: '#9b9bb5',
@@ -59,7 +60,9 @@ export default {
       let dragAction = 'STOP'
       let finalIndex
       let data = []
-      let timer;
+      let timer
+
+      me.$refs.ul.style.minHeight = `${me.$refs.ul.offsetHeight}px`;
 
       [].forEach.call(document.querySelectorAll('li'), (el) => {
         el.originalRect = el.getBoundingClientRect()
@@ -154,7 +157,7 @@ export default {
           return
         }
 
-        let elements = document.querySelectorAll('ul > li:not(.current)')
+        let elements = document.querySelectorAll('ul > li:not(.current):not(.top)')
         let x = clone.getBoundingClientRect().left
         let y = clone.getBoundingClientRect().top
 
@@ -314,7 +317,7 @@ export default {
         (function checkForWindowScroll () {
           clearTimeout(timer)
           if (adjustWindowScroll()) {
-            timer = setTimeout(checkForWindowScroll, 50)
+            timer = setTimeout(checkForWindowScroll, 15)
           }
         })()
 
@@ -343,11 +346,11 @@ export default {
 
           if (isInTopEdge && canScrollUp) {
             intensity = (edgeTop - viewportY) / me.options.edgeSize
-            // if (intensity >= 0) intensity = 0.1
+            if (intensity >= 1) intensity = 1
             nextScrollY = nextScrollY - maxStep * intensity
           } else if (isInBottomEdge && canScrollDown) {
             intensity = (viewportY - edgeBottom) / me.options.edgeSize
-            // if (intensity >= 0.7) intensity = 0.7
+            if (intensity >= 1) intensity = 1
             nextScrollY = nextScrollY + maxStep * intensity
           }
 
@@ -401,6 +404,7 @@ export default {
             if (el) {
               el.busy = false
               el.moved = false
+              el.classList.remove('current')
               el.style.pointerEvents = ``
               el.style.transition = `none`
               el.style.transform = `translate3d(0px, 0px, 0px)`
