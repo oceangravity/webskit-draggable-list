@@ -368,6 +368,7 @@ export default {
 
       document.addEventListener('mouseup', async () => {
         dragAction = 'STOP'
+        clearTimeout(timer)
         if (!dragging) {
           [].forEach.call(document.querySelectorAll('li'), (el) => {
             if (el) {
