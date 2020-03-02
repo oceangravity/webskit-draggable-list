@@ -1,7 +1,7 @@
 <template>
   <ul class="wk-ul" ref="ul">
     <li ref="node" style="height: 0; padding: 0" class="top"></li>
-    <li v-for="(item, index) in list" :key="index" :index="index" >{{ item.name }}</li>
+    <li v-for="(item, index) in list" :key="index">{{ item.name }}</li>
   </ul>
 </template>
 
@@ -36,7 +36,7 @@ export default {
       type: Object,
       default: function () {
         return {
-          edgeSize: 100,
+          edgeSize: 50,
           size: 120,
           arcColor: 'rgb(53, 57, 60)',
           arcBackgroundColor: '#9b9bb5',
@@ -62,10 +62,7 @@ export default {
       let data = []
       let timer
 
-      me.$refs.ul.style.minHeight = `${me.$refs.ul.offsetHeight}px`;
-
-      [].forEach.call(document.querySelectorAll('li'), (el) => {
-        el.originalRect = el.getBoundingClientRect()
+      [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
         el.style.transform = 'translate3d(0px, 0px, 0px)'
         el.addEventListener('transitionend', function (e) {
           if (e.propertyName === 'transform') {
@@ -151,13 +148,17 @@ export default {
         return collide
       }
 
+      const getIndex = (el) => [...me.$refs.ul.querySelectorAll('li:not(.top)')].indexOf(el)
+
+      const getElementByIndex = (index) => [...me.$refs.ul.querySelectorAll('li:not(.top)')][index]
+
       const checker = () => {
         if (!initialPos || !dragging) {
           requestAnimationFrame(checker)
           return
         }
 
-        let elements = document.querySelectorAll('ul > li:not(.current):not(.top)')
+        let elements = me.$refs.ul.querySelectorAll('li:not(.current):not(.top)')
         let x = clone.getBoundingClientRect().left
         let y = clone.getBoundingClientRect().top
 
@@ -165,7 +166,7 @@ export default {
 
         let o = getClosestElement(elements, x, y + clone.offsetHeight / 2)
 
-        if (parseInt(current.getAttribute('index'), 10) > parseInt(o.el.getAttribute('index'), 10)) {
+        if (getIndex(current) > getIndex(o.el)) {
           o = getClosestElement(elements, x, y)
         } else {
           o = getClosestElement(elements, x, y + clone.offsetHeight)
@@ -178,10 +179,10 @@ export default {
         }
 
         const collideElement = o.el
-        const collideIndex = parseInt(collideElement.getAttribute('index'), 10)
+        const collideIndex = getIndex(collideElement)
         const rect1 = collideElement.getBoundingClientRect()
         const rect2 = clone.getBoundingClientRect()
-        let currentIndex = parseInt(current.getAttribute('index'), 10)
+        let currentIndex = getIndex(current)
 
         if (!collideElement.busy) {
           if (rect1.top < rect2.top && rect2.top < rect1.top + collideElement.offsetHeight / 2) {
@@ -189,7 +190,7 @@ export default {
               data.push({ index: collideIndex, side: 'INIT' })
             } else {
               if (overlaps.length > 1) {
-                data.push({ index: parseInt(overlaps[overlaps.length - 2].getAttribute('index'), 10), side: 'POST' })
+                data.push({ index: getIndex(overlaps[overlaps.length - 2]), side: 'POST' })
               } else {
                 data.push({ index: collideIndex, side: 'PRE' })
               }
@@ -199,7 +200,7 @@ export default {
               data.push({ index: collideIndex, side: 'INIT' })
             } else {
               if (overlaps.length > 1) {
-                data.push({ index: parseInt(overlaps[1].getAttribute('index'), 10), side: 'PRE' })
+                data.push({ index: getIndex(overlaps[1]), side: 'PRE' })
               } else {
                 data.push({ index: collideIndex, side: 'POST' })
               }
@@ -212,7 +213,7 @@ export default {
         }
 
         if (data.length) {
-          let currentIndex = parseInt(current.getAttribute('index'), 10)
+          let currentIndex = getIndex(current)
           let intersectIndex = data[0].index
           let lastNode = data[0]
           let side
@@ -247,7 +248,7 @@ export default {
           }
 
           [].forEach.call(elements, (el) => {
-            let uuid = parseInt(el.getAttribute('index'), 10)
+            let uuid = getIndex(el)
             let item = pool[uuid]
             if (item && item.side === 'INIT' && el.moved) {
               el.moved = false
@@ -346,11 +347,10 @@ export default {
 
           if (isInTopEdge && canScrollUp) {
             intensity = (edgeTop - viewportY) / me.options.edgeSize
-            if (intensity >= 1) intensity = 1
+            if (intensity >= 0.3) intensity = 0.1
             nextScrollY = nextScrollY - maxStep * intensity
           } else if (isInBottomEdge && canScrollDown) {
             intensity = (viewportY - edgeBottom) / me.options.edgeSize
-            if (intensity >= 1) intensity = 1
             nextScrollY = nextScrollY + maxStep * intensity
           }
 
@@ -370,7 +370,7 @@ export default {
         dragAction = 'STOP'
         clearTimeout(timer)
         if (!dragging) {
-          [].forEach.call(document.querySelectorAll('li'), (el) => {
+          [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
             if (el) {
               el.classList.remove('current')
               el.style.visibility = ``
@@ -383,12 +383,12 @@ export default {
           return
         }
         dragging = false
-        let currentIndex = parseInt(current.getAttribute('index'), 10)
+        let currentIndex = getIndex(current)
         await me.update(currentIndex, finalIndex)
 
         me.$nextTick(() => {
-          let current = document.querySelector(`[index="${finalIndex}"]`)
-          let final = document.querySelector(`[index="${currentIndex}"]`)
+          let current = getElementByIndex(finalIndex)
+          let final = getElementByIndex(currentIndex)
           current.style.visibility = `none`
           current.style.transition = `none`
           current.style.pointerEvents = `none`
@@ -401,7 +401,7 @@ export default {
             final.style.opacity = ``
           }
 
-          [].forEach.call(document.querySelectorAll('li'), (el) => {
+          [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
             if (el) {
               el.busy = false
               el.moved = false
@@ -425,7 +425,7 @@ export default {
             current.style.pointerEvents = ``
             current.style.opacity = ``
             setTimeout(() => {
-              [].forEach.call(document.querySelectorAll('li'), el => {
+              [].forEach.call(me.$refs.ul.querySelectorAll('li'), el => {
                 if (el) {
                   el.style.transition = ``
                 }
