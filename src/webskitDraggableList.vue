@@ -6,6 +6,8 @@
 </template>
 
 <script>
+import WebsKitTool from 'webskit-nearest-elements'
+
 export default {
   name: 'WebskitDraggableList',
   data () {
@@ -94,37 +96,6 @@ export default {
         })
       })
 
-      const getClosestElement = (elements, x, y) => {
-        const distances = []
-        const distance = (element, x, y) => {
-          const mX = x
-          const mY = y
-          const from = { x: mX, y: mY }
-          const offset = element.getBoundingClientRect()
-          const nx1 = offset.left - document.querySelector('body').scrollLeft
-          const ny1 = offset.top - document.querySelector('body').scrollTop
-          const nx2 = nx1 + element.offsetWidth
-          const ny2 = ny1 + element.offsetHeight
-          const maxX1 = Math.max(mX, nx1)
-          const minX2 = Math.min(mX, nx2)
-          const maxY1 = Math.max(mY, ny1)
-          const minY2 = Math.min(mY, ny2)
-          const intersectX = minX2 >= maxX1
-          const intersectY = minY2 >= maxY1
-          const to = {
-            x: intersectX ? mX : nx2 < mX ? nx2 : nx1,
-            y: intersectY ? mY : ny2 < mY ? ny2 : ny1
-          }
-          const distX = to.x - from.x
-          const distY = to.y - from.y
-          return Math.sqrt(distX * distX + distY * distY)
-        };
-
-        [].forEach.call(elements, el => { distances.push({ el: el, distance: distance(el, x, y) }) })
-
-        return distances.length ? distances.reduce((prev, curr) => prev.distance < curr.distance ? prev : curr) : { el: null, distance: null }
-      }
-
       const mousemove = e => {
         clientX = e.clientX
         clientY = e.clientY
@@ -164,12 +135,12 @@ export default {
 
         data = []
 
-        let o = getClosestElement(elements, x, y + clone.offsetHeight / 2)
+        let o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + clone.offsetHeight / 2).nearest
 
         if (getIndex(current) > getIndex(o.el)) {
-          o = getClosestElement(elements, x, y)
+          o = WebsKitTool.getNearestAndFurthestElements(elements, x, y).nearest
         } else {
-          o = getClosestElement(elements, x, y + clone.offsetHeight)
+          o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + clone.offsetHeight).nearest
         }
 
         let overlaps = getOverlaps(elements)
@@ -430,7 +401,8 @@ export default {
                   el.style.transition = ``
                 }
               })
-            }, 100)
+              clone && clone.parentNode && document.body.removeChild(clone)
+            }, 10)
           }, false)
         })
       })

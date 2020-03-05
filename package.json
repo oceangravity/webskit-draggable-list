@@ -65,7 +65,9 @@
     "url": "https://github.com/oceangravity/webskit-draggable-list/issues"
   },
   "homepage": "https://github.com/oceangravity/webskit-draggable-list#readme",
-  "dependencies": {},
+  "dependencies": {
+    "webskit-nearest-elements": "1.0.0"
+  },
   "jest": {
     "moduleFileExtensions": [
       "js",
