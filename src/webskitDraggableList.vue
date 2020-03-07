@@ -1,12 +1,12 @@
 <template>
   <ul class="wk-ul" ref="ul">
-    <li ref="node" style="height: 0; padding: 0" class="top"></li>
     <li v-for="(item, index) in list" :key="index">{{ item.name }}</li>
   </ul>
 </template>
 
 <script>
 import WebsKitTool from 'webskit-nearest-elements'
+import WebsKInViewport from 'webskit-is-element-in-viewport'
 
 export default {
   name: 'WebskitDraggableList',
@@ -119,169 +119,188 @@ export default {
         return collide
       }
 
-      const getIndex = (el) => [...me.$refs.ul.querySelectorAll('li:not(.top)')].indexOf(el)
+      const getIndex = (el) => [...me.$refs.ul.querySelectorAll('li')].indexOf(el)
 
-      const getElementByIndex = (index) => [...me.$refs.ul.querySelectorAll('li:not(.top)')][index]
+      const getElementByIndex = (index) => [...me.$refs.ul.querySelectorAll('li')][index]
 
       const checker = () => {
         if (!initialPos || !dragging) {
+          clearTimeout(timer)
           requestAnimationFrame(checker)
           return
         }
 
-        let elements = me.$refs.ul.querySelectorAll('li:not(.current):not(.top)')
-        let x = clone.getBoundingClientRect().left
-        let y = clone.getBoundingClientRect().top
-
-        data = []
-
-        let o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + clone.offsetHeight / 2).nearest
-
-        if (getIndex(current) > getIndex(o.el)) {
-          o = WebsKitTool.getNearestAndFurthestElements(elements, x, y).nearest
-        } else {
-          o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + clone.offsetHeight).nearest
-        }
-
-        let overlaps = getOverlaps(elements)
-
-        if (overlaps.length === 1) {
-          o.el = overlaps[0]
-        }
-
-        const collideElement = o.el
-        const collideIndex = getIndex(collideElement)
-        const rect1 = collideElement.getBoundingClientRect()
-        const rect2 = clone.getBoundingClientRect()
-        let currentIndex = getIndex(current)
-
-        if (!collideElement.busy) {
-          if (rect1.top < rect2.top && rect2.top < rect1.top + collideElement.offsetHeight / 2) {
-            if (collideElement.moved) {
-              data.push({ index: collideIndex, side: 'INIT' })
-            } else {
-              if (overlaps.length > 1) {
-                data.push({ index: getIndex(overlaps[overlaps.length - 2]), side: 'POST' })
-              } else {
-                data.push({ index: collideIndex, side: 'PRE' })
-              }
-            }
-          } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + clone.offsetHeight) {
-            if (collideElement.moved && currentIndex > collideIndex) {
-              data.push({ index: collideIndex, side: 'INIT' })
-            } else {
-              if (overlaps.length > 1) {
-                data.push({ index: getIndex(overlaps[1]), side: 'PRE' })
-              } else {
-                data.push({ index: collideIndex, side: 'POST' })
-              }
-            }
-          } else if (rect2.top < rect1.top + collideElement.offsetHeight / 2) {
-            data.push({ index: collideIndex, side: 'PRE' })
-          } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + clone.offsetHeight) {
-            data.push({ index: collideIndex, side: 'POST' })
-          }
-        }
-
-        if (data.length) {
-          let currentIndex = getIndex(current)
-          let intersectIndex = data[0].index
-          let lastNode = data[0]
-          let side
-          let start = currentIndex < intersectIndex ? currentIndex : intersectIndex
-          let end = currentIndex > intersectIndex ? currentIndex : intersectIndex
-          side = currentIndex > lastNode.index ? 'PRE' : 'POST'
-          const pool = {}
-          const poolArr = []
-          for (let i = start; i <= end; i++) {
-            pool[i] = { index: i, side: side }
-            poolArr.push({ index: i, side: side })
-          }
-
-          if (side === 'PRE') {
-            pool[start].side = data[0].side
-            poolArr[0].side = data[0].side
-            let prePool = poolArr.filter(i => i.side === 'PRE')
-            if (prePool) {
-              finalIndex = prePool[0].index
-            } else {
-              finalIndex = currentIndex
-            }
-          } else {
-            pool[end].side = data[0].side
-            poolArr[poolArr.length - 1].side = data[0].side
-            let prePool = poolArr.filter(o => o.side === 'POST')
-            if (prePool) {
-              finalIndex = prePool[prePool.length - 1].index
-            } else {
-              finalIndex = currentIndex
-            }
-          }
-
-          [].forEach.call(elements, (el) => {
-            let uuid = getIndex(el)
-            let item = pool[uuid]
-            if (item && item.side === 'INIT' && el.moved) {
-              el.moved = false
-              el.busy = true
-              el.style.transform = `translate3d(0px, 0px, 0px)`
-            }
-            if (item && item.side === 'PRE' && side === 'POST' && el.moved) {
-              el.moved = false
+        if ((clientX > initialPos.x + 50 || clientX < initialPos.x - 50)) {
+          clearTimeout(timer)
+          console.log('revert')
+          finalIndex = getIndex(current);
+          [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
+            if (el) {
               el.busy = false
-              el.style.transform = `translate3d(0px, 0px, 0px)`
-            }
-            if (item && item.side === 'POST' && side === 'PRE' && el.moved) {
               el.moved = false
-              el.busy = false
-              el.style.transform = `translate3d(0px, 0px, 0px)`
-            }
-            if (currentIndex > uuid && item && item.side === 'PRE' && el !== current && el !== clone && !el.moved) {
-              el.busy = true
-              el.moved = true
-              el.style.transform = `translate3d(0px, ${current.offsetHeight}px, 0px)`
-            } else if (currentIndex < uuid && item && item.side === 'POST' && el !== current && el !== clone && !el.moved) {
-              el.busy = true
-              el.moved = true
-              el.style.transform = `translate3d(0px, -${ current.offsetHeight }px, 0px)`
-            } else if (!item) {
-              el.moved = false
-              el.busy = false
+              el.style.pointerEvents = ``
               el.style.transform = `translate3d(0px, 0px, 0px)`
             }
           })
+          if (!current.reverted && !WebsKInViewport.isInViewport(current, me.$refs.ul).inView) {
+            current.scrollIntoView({ block: 'center', behavior: 'smooth' })
+            current.reverted = true
+          }
+        } else {
+          let elements = me.$refs.ul.querySelectorAll('li:not(.current)')
+          let x = clone.getBoundingClientRect().left
+          let y = clone.getBoundingClientRect().top
+
+          current.reverted = false
+          data = []
+
+          let o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + clone.offsetHeight / 2).nearest
+
+          if (getIndex(current) > getIndex(o.el)) {
+            o = WebsKitTool.getNearestAndFurthestElements(elements, x, y).nearest
+          } else {
+            o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + clone.offsetHeight).nearest
+          }
+
+          let overlaps = getOverlaps(elements)
+
+          if (overlaps.length === 1) {
+            o.el = overlaps[0]
+          }
+
+          const collideElement = o.el
+          const collideIndex = getIndex(collideElement)
+          const rect1 = collideElement.getBoundingClientRect()
+          const rect2 = clone.getBoundingClientRect()
+          let currentIndex = getIndex(current)
+
+          if (!collideElement.busy) {
+            if (rect1.top < rect2.top && rect2.top < rect1.top + collideElement.offsetHeight / 2) {
+              if (collideElement.moved) {
+                data.push({ index: collideIndex, side: 'INIT' })
+              } else {
+                if (overlaps.length > 1) {
+                  data.push({ index: getIndex(overlaps[overlaps.length - 2]), side: 'POST' })
+                } else {
+                  data.push({ index: collideIndex, side: 'PRE' })
+                }
+              }
+            } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + clone.offsetHeight) {
+              if (collideElement.moved && currentIndex > collideIndex) {
+                data.push({ index: collideIndex, side: 'INIT' })
+              } else {
+                if (overlaps.length > 1) {
+                  data.push({ index: getIndex(overlaps[1]), side: 'PRE' })
+                } else {
+                  data.push({ index: collideIndex, side: 'POST' })
+                }
+              }
+            } else if (rect2.top < rect1.top + collideElement.offsetHeight / 2) {
+              data.push({ index: collideIndex, side: 'PRE' })
+            } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + clone.offsetHeight) {
+              data.push({ index: collideIndex, side: 'POST' })
+            }
+          }
+
+          if (data.length) {
+            let currentIndex = getIndex(current)
+            let intersectIndex = data[0].index
+            let lastNode = data[0]
+            let side
+            let start = currentIndex < intersectIndex ? currentIndex : intersectIndex
+            let end = currentIndex > intersectIndex ? currentIndex : intersectIndex
+            side = currentIndex > lastNode.index ? 'PRE' : 'POST'
+            const pool = {}
+            const poolArr = []
+            for (let i = start; i <= end; i++) {
+              pool[i] = { index: i, side: side }
+              poolArr.push({ index: i, side: side })
+            }
+
+            if (side === 'PRE') {
+              pool[start].side = data[0].side
+              poolArr[0].side = data[0].side
+              let prePool = poolArr.filter(i => i.side === 'PRE')
+              if (prePool) {
+                finalIndex = prePool[0].index
+              } else {
+                finalIndex = currentIndex
+              }
+            } else {
+              pool[end].side = data[0].side
+              poolArr[poolArr.length - 1].side = data[0].side
+              let prePool = poolArr.filter(o => o.side === 'POST')
+              if (prePool) {
+                finalIndex = prePool[prePool.length - 1].index
+              } else {
+                finalIndex = currentIndex
+              }
+            }
+
+            [].forEach.call(elements, (el) => {
+              let uuid = getIndex(el)
+              let item = pool[uuid]
+              if (item && item.side === 'INIT' && el.moved) {
+                el.moved = false
+                el.busy = true
+                el.style.transform = `translate3d(0px, 0px, 0px)`
+              }
+              if (item && item.side === 'PRE' && side === 'POST' && el.moved) {
+                el.moved = false
+                el.busy = false
+                el.style.transform = `translate3d(0px, 0px, 0px)`
+              }
+              if (item && item.side === 'POST' && side === 'PRE' && el.moved) {
+                el.moved = false
+                el.busy = false
+                el.style.transform = `translate3d(0px, 0px, 0px)`
+              }
+              if (currentIndex > uuid && item && item.side === 'PRE' && el !== current && el !== clone && !el.moved) {
+                el.busy = true
+                el.moved = true
+                el.style.transform = `translate3d(0px, ${current.offsetHeight}px, 0px)`
+              } else if (currentIndex < uuid && item && item.side === 'POST' && el !== current && el !== clone && !el.moved) {
+                el.busy = true
+                el.moved = true
+                el.style.transform = `translate3d(0px, -${ current.offsetHeight }px, 0px)`
+              } else if (!item) {
+                el.moved = false
+                el.busy = false
+                el.style.transform = `translate3d(0px, 0px, 0px)`
+              }
+            })
+          }
+
+          if ((clientY > initialPos.y + 50 || clientY < initialPos.y - 50)) {
+            handleScroll({ clientX: clientX, clientY: clientY }, me.$refs.ul, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize)
+          } else {
+            clearTimeout(timer)
+          }
         }
 
-        handleScroll()
         requestAnimationFrame(checker)
       }
 
-      const handleScroll = () => {
-        const me = this
-        const event = { clientX: clientX, clientY: clientY }
-        if (!dragging) {
-          clearTimeout(timer)
-          return
-        }
+      const handleScroll = (event, container, et, el, eb, er) => {
         const viewportX = event.clientX
-        const viewportY = event.clientY - me.$refs.ul.offsetTop
-        const viewportWidth = me.$refs.ul.clientWidth
-        const viewportHeight = me.$refs.ul.clientHeight
-        const edgeTop = me.options.edgeSize
-        const edgeLeft = me.options.edgeSize
-        const edgeBottom = viewportHeight - me.options.edgeSize
-        const edgeRight = viewportWidth - me.options.edgeSize
-        const isInLeftEdge = viewportX < edgeLeft
+        const viewportY = event.clientY - container.offsetTop
+        const viewportWidth = container.clientWidth
+        const viewportHeight = container.clientHeight
+        const edgeTop = et
+        const edgeLeft = el
+        const edgeBottom = viewportHeight - eb
+        const edgeRight = viewportWidth - er
+        const isInLeftEdge = viewportX < el
         const isInRightEdge = viewportX > edgeRight
-        const isInTopEdge = viewportY < edgeTop
+        const isInTopEdge = viewportY < et
         const isInBottomEdge = viewportY > edgeBottom
 
         if (!(isInLeftEdge || isInRightEdge || isInTopEdge || isInBottomEdge)) {
           return
         }
 
-        const documentWidth = me.$refs.ul.scrollWidth
-        const documentHeight = me.$refs.ul.scrollHeight
+        const documentWidth = container.scrollWidth
+        const documentHeight = container.scrollHeight
 
         const maxScrollX = documentWidth - viewportWidth
         const maxScrollY = documentHeight - viewportHeight;
@@ -294,9 +313,8 @@ export default {
         })()
 
         function adjustWindowScroll () {
-          const firstElement = me.$refs.ul.firstChild
-          const currentScrollX = Math.abs(firstElement.getBoundingClientRect().left - me.$refs.ul.getBoundingClientRect().left)
-          const currentScrollY = Math.abs(firstElement.getBoundingClientRect().top - me.$refs.ul.getBoundingClientRect().top)
+          const currentScrollX = container.scrollLeft
+          const currentScrollY = container.scrollTop
 
           const canScrollUp = currentScrollY > 0
           const canScrollDown = currentScrollY < maxScrollY
@@ -309,19 +327,19 @@ export default {
           let intensity
 
           if (isInLeftEdge && canScrollLeft) {
-            intensity = (edgeLeft - viewportX) / me.options.edgeSize
+            intensity = (edgeLeft - viewportX) / el
             nextScrollX = nextScrollX - maxStep * intensity
           } else if (isInRightEdge && canScrollRight) {
-            intensity = (viewportX - edgeRight) / me.options.edgeSize
+            intensity = (viewportX - edgeRight) / er
             nextScrollX = nextScrollX + maxStep * intensity
           }
 
           if (isInTopEdge && canScrollUp) {
-            intensity = (edgeTop - viewportY) / me.options.edgeSize
-            if (intensity >= 0.3) intensity = 0.1
+            intensity = (edgeTop - viewportY) / et
+            // if (intensity >= 0.3) intensity = 0.1
             nextScrollY = nextScrollY - maxStep * intensity
           } else if (isInBottomEdge && canScrollDown) {
-            intensity = (viewportY - edgeBottom) / me.options.edgeSize
+            intensity = (viewportY - edgeBottom) / eb
             nextScrollY = nextScrollY + maxStep * intensity
           }
 
@@ -329,7 +347,7 @@ export default {
           nextScrollY = Math.max(0, Math.min(maxScrollY, nextScrollY))
 
           if (nextScrollY !== currentScrollY) {
-            me.$refs.ul.scrollTo(0, nextScrollY)
+            container.scrollTo(0, nextScrollY)
             return true
           } else {
             return false
@@ -449,6 +467,10 @@ export default {
     width: 500px;
     max-height: 300px;
     overflow: auto;
+
+    li {
+      box-sizing: border-box;
+    }
   }
 
   li {
