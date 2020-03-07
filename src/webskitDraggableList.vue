@@ -7,6 +7,7 @@
 <script>
 import WebsKitTool from 'webskit-nearest-elements'
 import WebsKInViewport from 'webskit-is-element-in-viewport'
+import WebsKOverlaps from 'webskit-get-overlaps-elements'
 
 export default {
   name: 'WebskitDraggableList',
@@ -107,18 +108,6 @@ export default {
         }
       }
 
-      const getOverlaps = elements => {
-        const rect1 = clone.getBoundingClientRect()
-        let collide = [];
-        [].forEach.call(elements, el => {
-          const rect2 = el.getBoundingClientRect()
-          if (!(rect1.top > rect2.bottom || rect1.right < rect2.left || rect1.bottom < rect2.top || rect1.left > rect2.right)) {
-            collide.push(el)
-          }
-        })
-        return collide
-      }
-
       const getIndex = (el) => [...me.$refs.ul.querySelectorAll('li')].indexOf(el)
 
       const getElementByIndex = (index) => [...me.$refs.ul.querySelectorAll('li')][index]
@@ -162,7 +151,7 @@ export default {
             o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + clone.offsetHeight).nearest
           }
 
-          let overlaps = getOverlaps(elements)
+          let overlaps = WebsKOverlaps.getOverlaps(clone, elements)
 
           if (overlaps.length === 1) {
             o.el = overlaps[0]

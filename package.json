@@ -67,7 +67,8 @@
   "homepage": "https://github.com/oceangravity/webskit-draggable-list#readme",
   "dependencies": {
     "webskit-nearest-elements": "1.0.0",
-    "webskit-is-element-in-viewport": "^1.0.0"
+    "webskit-is-element-in-viewport": "^1.0.0",
+    "webskit-get-overlaps-elements": "^1.0.0"
   },
   "jest": {
     "moduleFileExtensions": [
