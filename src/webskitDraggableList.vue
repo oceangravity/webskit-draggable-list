@@ -6,8 +6,9 @@
 
 <script>
 import WebsKitTool from 'webskit-nearest-elements'
-import WebsKInViewport from 'webskit-is-element-in-viewport'
-import WebsKOverlaps from 'webskit-get-overlaps-elements'
+import WebsKitInViewport from 'webskit-is-element-in-viewport'
+import WebsKitOverlaps from 'webskit-get-overlaps-elements'
+import WebsKitAutoScroll from 'webskit-auto-scroll-on-edges'
 
 export default {
   name: 'WebskitDraggableList',
@@ -63,7 +64,7 @@ export default {
       let dragAction = 'STOP'
       let finalIndex
       let data = []
-      let timer
+      let scroll = new WebsKitAutoScroll();
 
       [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
         el.style.transform = 'translate3d(0px, 0px, 0px)'
@@ -74,25 +75,22 @@ export default {
           }
         }, false)
         el.addEventListener('mousedown', e => {
+          [].forEach.call(document.querySelectorAll('.wk-dl-clone'), el => {
+            document.body.removeChild(el)
+          })
           current = el
           clientX = e.clientX
           clientY = e.clientY
           const rect = current.getBoundingClientRect()
           clone = el.cloneNode(true)
-          clone.style.position = 'fixed'
+          clone.classList.add('wk-dl-clone')
           clone.style.top = `${rect.top}px`
           clone.style.left = `${rect.left}px`
           clone.style.width = `${current.offsetWidth}px`
           clone.style.heith = `${current.offsetHeight}px`
-          clone.style.transition = `none`
-          clone.style.pointerEvents = `none`
           document.body.appendChild(clone)
           initialPos = { x: e.clientX, y: e.clientY }
-          current.style.pointerEvents = `none`
-          current.style.visibility = `hidden`
-          current.classList.add('current')
-          current.style.opacity = `0`
-          current.style.transition = `none`
+          current.classList.add('wk-dl-current')
           dragAction = 'PRE-MOVE'
         })
       })
@@ -114,14 +112,13 @@ export default {
 
       const checker = () => {
         if (!initialPos || !dragging) {
-          clearTimeout(timer)
+          scroll.stop()
           requestAnimationFrame(checker)
           return
         }
 
         if ((clientX > initialPos.x + 50 || clientX < initialPos.x - 50)) {
-          clearTimeout(timer)
-          console.log('revert')
+          scroll.stop()
           finalIndex = getIndex(current);
           [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
             if (el) {
@@ -131,12 +128,12 @@ export default {
               el.style.transform = `translate3d(0px, 0px, 0px)`
             }
           })
-          if (!current.reverted && !WebsKInViewport.isInViewport(current, me.$refs.ul).inView) {
+          if (!current.reverted && !WebsKitInViewport.isInViewport(current, me.$refs.ul).inView) {
             current.scrollIntoView({ block: 'center', behavior: 'smooth' })
             current.reverted = true
           }
         } else {
-          let elements = me.$refs.ul.querySelectorAll('li:not(.current)')
+          let elements = me.$refs.ul.querySelectorAll('li:not(.wk-dl-current)')
           let x = clone.getBoundingClientRect().left
           let y = clone.getBoundingClientRect().top
 
@@ -151,7 +148,7 @@ export default {
             o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + clone.offsetHeight).nearest
           }
 
-          let overlaps = WebsKOverlaps.getOverlaps(clone, elements)
+          let overlaps = WebsKitOverlaps.getOverlaps(clone, elements)
 
           if (overlaps.length === 1) {
             o.el = overlaps[0]
@@ -261,100 +258,22 @@ export default {
           }
 
           if ((clientY > initialPos.y + 50 || clientY < initialPos.y - 50)) {
-            handleScroll({ clientX: clientX, clientY: clientY }, me.$refs.ul, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize)
+            scroll.handle({ clientX: clientX, clientY: clientY }, me.$refs.ul, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize)
           } else {
-            clearTimeout(timer)
+            scroll.stop()
           }
         }
 
         requestAnimationFrame(checker)
       }
 
-      const handleScroll = (event, container, et, el, eb, er) => {
-        const viewportX = event.clientX
-        const viewportY = event.clientY - container.offsetTop
-        const viewportWidth = container.clientWidth
-        const viewportHeight = container.clientHeight
-        const edgeTop = et
-        const edgeLeft = el
-        const edgeBottom = viewportHeight - eb
-        const edgeRight = viewportWidth - er
-        const isInLeftEdge = viewportX < el
-        const isInRightEdge = viewportX > edgeRight
-        const isInTopEdge = viewportY < et
-        const isInBottomEdge = viewportY > edgeBottom
-
-        if (!(isInLeftEdge || isInRightEdge || isInTopEdge || isInBottomEdge)) {
-          return
-        }
-
-        const documentWidth = container.scrollWidth
-        const documentHeight = container.scrollHeight
-
-        const maxScrollX = documentWidth - viewportWidth
-        const maxScrollY = documentHeight - viewportHeight;
-
-        (function checkForWindowScroll () {
-          clearTimeout(timer)
-          if (adjustWindowScroll()) {
-            timer = setTimeout(checkForWindowScroll, 15)
-          }
-        })()
-
-        function adjustWindowScroll () {
-          const currentScrollX = container.scrollLeft
-          const currentScrollY = container.scrollTop
-
-          const canScrollUp = currentScrollY > 0
-          const canScrollDown = currentScrollY < maxScrollY
-          const canScrollLeft = currentScrollX > 0
-          const canScrollRight = currentScrollX < maxScrollX
-          // eslint-disable-next-line no-unused-vars
-          let nextScrollX = currentScrollX
-          let nextScrollY = currentScrollY
-          const maxStep = 5
-          let intensity
-
-          if (isInLeftEdge && canScrollLeft) {
-            intensity = (edgeLeft - viewportX) / el
-            nextScrollX = nextScrollX - maxStep * intensity
-          } else if (isInRightEdge && canScrollRight) {
-            intensity = (viewportX - edgeRight) / er
-            nextScrollX = nextScrollX + maxStep * intensity
-          }
-
-          if (isInTopEdge && canScrollUp) {
-            intensity = (edgeTop - viewportY) / et
-            // if (intensity >= 0.3) intensity = 0.1
-            nextScrollY = nextScrollY - maxStep * intensity
-          } else if (isInBottomEdge && canScrollDown) {
-            intensity = (viewportY - edgeBottom) / eb
-            nextScrollY = nextScrollY + maxStep * intensity
-          }
-
-          nextScrollX = Math.max(0, Math.min(maxScrollX, nextScrollX))
-          nextScrollY = Math.max(0, Math.min(maxScrollY, nextScrollY))
-
-          if (nextScrollY !== currentScrollY) {
-            container.scrollTo(0, nextScrollY)
-            return true
-          } else {
-            return false
-          }
-        }
-      }
-
       document.addEventListener('mouseup', async () => {
         dragAction = 'STOP'
-        clearTimeout(timer)
+        scroll.stop()
         if (!dragging) {
           [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
             if (el) {
-              el.classList.remove('current')
-              el.style.visibility = ``
-              el.style.transition = ``
-              el.style.pointerEvents = ``
-              el.style.opacity = ``
+              el.classList.remove('wk-dl-current')
             }
           })
           clone && clone.parentNode && document.body.removeChild(clone)
@@ -372,7 +291,7 @@ export default {
           current.style.pointerEvents = `none`
           current.style.opacity = `0`
           if (currentIndex !== finalIndex) {
-            final.classList.remove('current')
+            final.classList.remove('wk-dl-current')
             final.style.visibility = ``
             final.style.transition = ``
             final.style.pointerEvents = ``
@@ -383,7 +302,7 @@ export default {
             if (el) {
               el.busy = false
               el.moved = false
-              el.classList.remove('current')
+              el.classList.remove('wk-dl-current')
               el.style.pointerEvents = ``
               el.style.transition = `none`
               el.style.transform = `translate3d(0px, 0px, 0px)`
@@ -392,12 +311,11 @@ export default {
 
           clone.style.top = `0`
           clone.style.left = `0`
-          clone.style.transition = `300ms`
+          clone.style.transition = `100ms`
           let originalRect = current.getBoundingClientRect()
           clone.style.transform = `translate3d(${originalRect.left}px, ${originalRect.top}px, 0px)`
 
           clone.addEventListener('transitionend', function () {
-            clone && clone.parentNode && document.body.removeChild(clone)
             current.style.visibility = ``
             current.style.transition = `none`
             current.style.pointerEvents = ``
@@ -431,54 +349,16 @@ export default {
 </script>
 
 <style lang="scss">
-  html, body {
-    font-family: Montserrat,Helvetica Neue,Helvetica,arial,sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    background-color: rgba(244,245,249,.7);
-    margin: 0;
-    padding: 0;
-    height: 100%;
+  .wk-dl-clone {
+    position: fixed;
+    transition: none;
+    pointer-events: none;
   }
 
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  .wk-dl-current {
+    transition: none;
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
   }
-
-  ul {
-    position: relative;
-    background-color: #f3f3f3;
-    border: 1px solid #efefef;
-    margin: 0 auto;
-    padding: 0;
-    width: 500px;
-    max-height: 300px;
-    overflow: auto;
-
-    li {
-      box-sizing: border-box;
-    }
-  }
-
-  li {
-    list-style-type: none;
-    z-index: 0;
-    transition: 300ms;
-    pointer-events: all;
-    display: flex;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
-    align-items: center;
-    width: 100%;
-    padding: 20px;
-    background-color: #fff;
-    border-bottom: 1px solid #efefef;
-    box-sizing: border-box;
-    user-select: none;
-    color: #333;
-    font-weight: 400;
-  }
-
 </style>
