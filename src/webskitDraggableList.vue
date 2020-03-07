@@ -15,6 +15,7 @@ export default {
   data () {
     return {
       dragging: false,
+      dummyInserted: false,
       list: [
         { name: 'Item 1' },
         { name: 'Item 2' },
@@ -64,6 +65,7 @@ export default {
       let dragAction = 'STOP'
       let finalIndex
       let data = []
+      let multi = false
       let scroll = new WebsKitAutoScroll();
 
       [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
@@ -74,6 +76,7 @@ export default {
           }
         }, false)
         el.addEventListener('mousedown', e => {
+          me.$refs.ul.classList.add('wk-dl-ul-active');
           [].forEach.call(document.querySelectorAll('.wk-dl-clone'), el => {
             document.body.removeChild(el)
           })
@@ -110,13 +113,35 @@ export default {
       const getElementByIndex = (index) => [...me.$refs.ul.querySelectorAll('li')][index]
 
       const checker = () => {
-        if (!initialPos || !dragging) {
-          scroll.stop()
-          requestAnimationFrame(checker)
-          return
+        if (document.querySelector('.wk-dl-clone')) {
+          let o = WebsKitOverlaps.getOverlaps(document.querySelector('.wk-dl-clone'), document.querySelectorAll('ul:not(.wk-dl-ul-active)'))
+          if (o.length === 1) {
+            if (o[0] === me.$refs.ul) {
+              if (!me.dummyInserted) {
+                me.list.push({ name: 'dummy' })
+                me.$nextTick(() => {
+                  me.dummyInserted = true
+                })
+              } else {
+                dragging = true
+                multi = true
+                initialPos = { x: 0, y: 0 }
+                clone = document.querySelector('.wk-dl-clone')
+                current = getElementByIndex(me.list.length - 1)
+              }
+            }
+          }
         }
 
-        if ((clientX > initialPos.x + 50 || clientX < initialPos.x - 50)) {
+        if (!multi) {
+          if (!initialPos || !dragging) {
+            scroll.stop()
+            requestAnimationFrame(checker)
+            return
+          }
+        }
+
+        if ((clientX > initialPos.x + 50 || clientX < initialPos.x - 50) && !multi) {
           scroll.stop()
           finalIndex = getIndex(current);
           [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
@@ -325,6 +350,7 @@ export default {
                   el.style.transition = ``
                 }
               })
+              me.$refs.ul.classList.remove('wk-dl-ul-active')
               clone && clone.parentNode && document.body.removeChild(clone)
             }, 10)
           }, false)
