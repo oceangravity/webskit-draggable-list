@@ -67,7 +67,6 @@ export default {
       let scroll = new WebsKitAutoScroll();
 
       [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
-        el.style.transform = 'translate3d(0px, 0px, 0px)'
         el.addEventListener('transitionend', function (e) {
           if (e.propertyName === 'transform') {
             e.target.busy = false
@@ -305,7 +304,7 @@ export default {
               el.classList.remove('wk-dl-current')
               el.style.pointerEvents = ``
               el.style.transition = `none`
-              el.style.transform = `translate3d(0px, 0px, 0px)`
+              el.style.transform = ``
             }
           })
 
