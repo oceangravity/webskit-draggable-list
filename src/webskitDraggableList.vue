@@ -147,8 +147,6 @@ export default {
           return
         }
 
-        console.log(me.dragging)
-
         if (!me.initialPos || !me.dragging) {
           scroll.stop()
           requestAnimationFrame(checker)
@@ -305,9 +303,13 @@ export default {
         requestAnimationFrame(checker)
       }
 
-      document.addEventListener('mouseup', () => {
+      document.addEventListener('mouseup', async () => {
         dragAction = 'STOP'
         scroll.stop()
+        if (linkList) {
+          linkList = false
+          return
+        }
         if (!me.dragging) {
           [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
             if (el) {
@@ -317,64 +319,48 @@ export default {
           clone && clone.parentNode && document.body.removeChild(clone)
           return
         }
-        me.dragging = false
-        if (linkList) {
-          linkList = false
-          return
-        }
+        clone.classList.remove('wk-dl-clone')
+        clone.style.position = `fixed`
+        me.dragging = false;
+
+        [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
+          if (el) {
+            el.style.transitionDuration = `0s`
+            el.style.transform = `translate3d(0px, 0px, 0px)`
+            setTimeout(() => {
+              el.style.transitionDuration = ``
+            }, 1)
+          }
+        })
+
         let currentIndex = getIndex(current)
-        me.update(currentIndex, finalIndex)
+        await me.update(currentIndex, finalIndex)
 
         me.$nextTick(() => {
-          let current = getElementByIndex(finalIndex)
-          let final = getElementByIndex(currentIndex)
-          current.style.visibility = `none`
-          current.style.transition = `none`
-          current.style.pointerEvents = `none`
-          current.style.opacity = `0`
-          if (currentIndex !== finalIndex) {
-            final.classList.remove('wk-dl-current')
-            final.style.visibility = ``
-            final.style.transition = ``
-            final.style.pointerEvents = ``
-            final.style.opacity = ``
-          }
-
           [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
-            if (el) {
-              el.busy = false
-              el.moved = false
-              el.classList.remove('wk-dl-current')
-              el.style.pointerEvents = ``
-              el.style.transition = `none`
-              el.style.transform = ``
-            }
+            el.busy = false
+            el.moved = false
+            el.classList.remove('wk-dl-current')
           })
-
+          let current = getElementByIndex(finalIndex)
+          me.$refs.ul.classList.remove('wk-dl-ul-active')
+          multi = false
+          current.style.visibility = `hidden`
+          current.style.opacity = `0`
           clone.style.top = `0`
           clone.style.left = `0`
-          clone.style.transition = `100ms`
-          let originalRect = current.getBoundingClientRect()
-          clone.style.transform = `translate3d(${originalRect.left}px, ${originalRect.top}px, 0px)`
-
+          clone.style.transition = `150ms linear`
           clone.addEventListener('transitionend', function () {
+            current.style.transitionDuration = `0s`
             current.style.visibility = ``
-            current.style.transition = `none`
-            current.style.pointerEvents = ``
             current.style.opacity = ``
             setTimeout(() => {
-              [].forEach.call(me.$refs.ul.querySelectorAll('li'), el => {
-                if (el) {
-                  el.classList.remove('wk-dl-current')
-                  el.style.transition = ``
-                  el.style.transform = `translate3d(0px, 0px, 0px)`
-                }
-              })
-              me.$refs.ul.classList.remove('wk-dl-ul-active')
-              multi = false
+              current.style.transitionDuration = ``
               clone && clone.parentNode && document.body.removeChild(clone)
-            }, 10)
+            }, 1)
           }, false)
+          let originalRect = current.getBoundingClientRect()
+          clone.style.transform = `translate3d(${originalRect.left}px, ${originalRect.top}px, 0px)`
         })
       })
 
