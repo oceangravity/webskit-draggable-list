@@ -140,6 +140,17 @@ export default {
           } else {
             multi = false
             linkList = false
+            if (!me.$refs.ul.classList.contains('wk-dl-ul-active')) {
+              multi = false
+              scroll.stop()
+              me.dragging = false;
+              [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
+                el.busy = false
+                el.moved = false
+                el.style.pointerEvents = ``
+                el.style.transform = `translate3d(0px, 0px, 0px)`
+              })
+            }
           }
         } else {
           scroll.stop()
@@ -303,7 +314,7 @@ export default {
         requestAnimationFrame(checker)
       }
 
-      document.addEventListener('mouseup', async () => {
+      document.addEventListener('mouseup', () => {
         dragAction = 'STOP'
         scroll.stop()
         if (linkList) {
@@ -316,35 +327,33 @@ export default {
               el.classList.remove('wk-dl-current')
             }
           })
-          clone && clone.parentNode && document.body.removeChild(clone)
+          if (me.$refs.ul.classList.contains('wk-dl-ul-active')) {
+            clone && clone.parentNode && document.body.removeChild(clone)
+          }
           return
         }
         clone.classList.remove('wk-dl-clone')
         clone.style.position = `fixed`
-        me.dragging = false;
-
-        [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
-          if (el) {
-            el.style.transitionDuration = `0s`
-            el.style.transform = `translate3d(0px, 0px, 0px)`
-            setTimeout(() => {
-              el.style.transitionDuration = ``
-            }, 1)
-          }
-        })
+        me.dragging = false
 
         let currentIndex = getIndex(current)
-        await me.update(currentIndex, finalIndex)
+        me.update(currentIndex, finalIndex)
 
         me.$nextTick(() => {
           [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
             el.busy = false
             el.moved = false
             el.classList.remove('wk-dl-current')
+            el.style.transitionDuration = `0s`
+            el.style.transform = ``
+            setTimeout(() => {
+              el.style.transitionDuration = ``
+            }, 1)
           })
           let current = getElementByIndex(finalIndex)
           me.$refs.ul.classList.remove('wk-dl-ul-active')
           multi = false
+          me.dummyInserted = false
           current.style.visibility = `hidden`
           current.style.opacity = `0`
           clone.style.top = `0`
