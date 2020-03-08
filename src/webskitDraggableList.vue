@@ -1,6 +1,6 @@
 <template>
   <ul class="wk-ul" ref="ul">
-    <li v-for="(item, index) in list" :key="index">{{ item.name }}</li>
+    <li v-for="(item, index) in list" @mousedown="mousedown" :key="index">{{ item.name }}</li>
   </ul>
 </template>
 
@@ -14,7 +14,12 @@ export default {
   name: 'WebskitDraggableList',
   data () {
     return {
+      current: null,
+      clientX: 0,
+      clientY: 0,
+      clone: null,
       dragging: false,
+      dragAction: 'STOP',
       initialPos: null,
       dummyInserted: false,
       list: [
@@ -57,58 +62,22 @@ export default {
   mounted () {
     const me = this
     this.$nextTick(() => {
-      let current
-      let clone
-      let clientX = 0
-      let clientY = 0
-      let dragAction = 'STOP'
       let finalIndex
       let data = []
       let multi = false
       let linkList = false
       let scroll = new WebsKitAutoScroll()
 
-      me.$refs.ul.addEventListener('scroll', () => {
-        // debugger
-      });
-
-      [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
-        el.addEventListener('transitionend', function (e) {
-          if (e.propertyName === 'transform') {
-            e.target.busy = false
-            e.target.style.pointerEvents = ``
-          }
-        }, false)
-        el.addEventListener('mousedown', e => {
-          me.$refs.ul.classList.add('wk-dl-ul-active');
-          [].forEach.call(document.querySelectorAll('.wk-dl-clone'), el => {
-            document.body.removeChild(el)
-          })
-          current = el
-          clientX = e.clientX
-          clientY = e.clientY
-          const rect = current.getBoundingClientRect()
-          clone = el.cloneNode(true)
-          clone.classList.add('wk-dl-clone')
-          clone.style.top = `${rect.top}px`
-          clone.style.left = `${rect.left}px`
-          clone.style.width = `${current.offsetWidth}px`
-          clone.style.heith = `${current.offsetHeight}px`
-          document.body.appendChild(clone)
-          me.initialPos = { x: e.clientX, y: e.clientY }
-          current.classList.add('wk-dl-current')
-          dragAction = 'PRE-MOVE'
-        })
-      })
+      me.setTransitionEnd()
 
       const mousemove = e => {
-        clientX = e.clientX
-        clientY = e.clientY
-        if ((dragAction === 'PRE-MOVE') && (e.clientX > me.initialPos.x + 2 || e.clientY > me.initialPos.y + 2 || e.clientX < me.initialPos.x - 2 || e.clientY < me.initialPos.y - 2)) {
+        me.clientX = e.clientX
+        me.clientY = e.clientY
+        if ((me.dragAction === 'PRE-MOVE') && (e.clientX > me.initialPos.x + 2 || e.clientY > me.initialPos.y + 2 || e.clientX < me.initialPos.x - 2 || e.clientY < me.initialPos.y - 2)) {
           me.dragging = true
-          let x = clientX - me.initialPos.x
-          let y = clientY - me.initialPos.y
-          clone.style.transform = `translate3d(${x}px, ${y}px, 0px)`
+          let x = me.clientX - me.initialPos.x
+          let y = me.clientY - me.initialPos.y
+          me.clone.style.transform = `translate3d(${x}px, ${y}px, 0px)`
         }
       }
 
@@ -130,9 +99,9 @@ export default {
                 me.dragging = true
                 multi = true
                 me.initialPos = { x: 0, y: 0 }
-                clone = document.querySelector('.wk-dl-clone')
-                current = getElementByIndex(me.list.length - 1)
-                current.classList.add('wk-dl-current')
+                me.clone = document.querySelector('.wk-dl-clone')
+                me.current = getElementByIndex(me.list.length - 1)
+                me.current.classList.add('wk-dl-current')
               }
             } else {
               linkList = true
@@ -164,9 +133,9 @@ export default {
           return
         }
 
-        if ((clientX > me.initialPos.x + 50 || clientX < me.initialPos.x - 50) && !multi) {
+        if ((me.clientX > me.initialPos.x + 50 || me.clientX < me.initialPos.x - 50) && !multi) {
           scroll.stop()
-          finalIndex = getIndex(current);
+          finalIndex = getIndex(me.current);
           [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
             if (el) {
               el.busy = false
@@ -175,27 +144,27 @@ export default {
               el.style.transform = `translate3d(0px, 0px, 0px)`
             }
           })
-          if (!current.reverted && !WebsKitInViewport.isInViewport(current, me.$refs.ul).inView) {
-            current.scrollIntoView({ block: 'center', behavior: 'smooth' })
-            current.reverted = true
+          if (!me.current.reverted && !WebsKitInViewport.isInViewport(me.current, me.$refs.ul).inView) {
+            me.current.scrollIntoView({ block: 'center', behavior: 'smooth' })
+            me.current.reverted = true
           }
         } else {
           let elements = me.$refs.ul.querySelectorAll('li:not(.wk-dl-current)')
-          let x = clone.getBoundingClientRect().left
-          let y = clone.getBoundingClientRect().top
+          let x = me.clone.getBoundingClientRect().left
+          let y = me.clone.getBoundingClientRect().top
 
-          current.reverted = false
+          me.current.reverted = false
           data = []
 
-          let o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + clone.offsetHeight / 2).nearest
+          let o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + me.clone.offsetHeight / 2).nearest
 
-          if (getIndex(current) > getIndex(o.el)) {
+          if (getIndex(me.current) > getIndex(o.el)) {
             o = WebsKitTool.getNearestAndFurthestElements(elements, x, y).nearest
           } else {
-            o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + clone.offsetHeight).nearest
+            o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + me.clone.offsetHeight).nearest
           }
 
-          let overlaps = WebsKitOverlaps.getOverlaps(clone, elements)
+          let overlaps = WebsKitOverlaps.getOverlaps(me.clone, elements)
 
           if (overlaps.length === 1) {
             o.el = overlaps[0]
@@ -204,8 +173,8 @@ export default {
           const collideElement = o.el
           const collideIndex = getIndex(collideElement)
           const rect1 = collideElement.getBoundingClientRect()
-          const rect2 = clone.getBoundingClientRect()
-          let currentIndex = getIndex(current)
+          const rect2 = me.clone.getBoundingClientRect()
+          let currentIndex = getIndex(me.current)
 
           if (!collideElement.busy) {
             if (rect1.top < rect2.top && rect2.top < rect1.top + collideElement.offsetHeight / 2) {
@@ -218,7 +187,7 @@ export default {
                   data.push({ index: collideIndex, side: 'PRE' })
                 }
               }
-            } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + clone.offsetHeight) {
+            } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + me.clone.offsetHeight) {
               if (collideElement.moved && currentIndex > collideIndex) {
                 data.push({ index: collideIndex, side: 'INIT' })
               } else {
@@ -230,13 +199,13 @@ export default {
               }
             } else if (rect2.top < rect1.top + collideElement.offsetHeight / 2) {
               data.push({ index: collideIndex, side: 'PRE' })
-            } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + clone.offsetHeight) {
+            } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + me.clone.offsetHeight) {
               data.push({ index: collideIndex, side: 'POST' })
             }
           }
 
           if (data.length) {
-            let currentIndex = getIndex(current)
+            let currentIndex = getIndex(me.current)
             let intersectIndex = data[0].index
             let lastNode = data[0]
             let side
@@ -288,14 +257,14 @@ export default {
                 el.busy = false
                 el.style.transform = `translate3d(0px, 0px, 0px)`
               }
-              if (currentIndex > uuid && item && item.side === 'PRE' && el !== current && el !== clone && !el.moved) {
+              if (currentIndex > uuid && item && item.side === 'PRE' && el !== me.current && el !== me.clone && !el.moved) {
                 el.busy = true
                 el.moved = true
-                el.style.transform = `translate3d(0px, ${current.offsetHeight}px, 0px)`
-              } else if (currentIndex < uuid && item && item.side === 'POST' && el !== current && el !== clone && !el.moved) {
+                el.style.transform = `translate3d(0px, ${me.current.offsetHeight}px, 0px)`
+              } else if (currentIndex < uuid && item && item.side === 'POST' && el !== me.current && el !== me.clone && !el.moved) {
                 el.busy = true
                 el.moved = true
-                el.style.transform = `translate3d(0px, -${ current.offsetHeight }px, 0px)`
+                el.style.transform = `translate3d(0px, -${ me.current.offsetHeight }px, 0px)`
               } else if (!item) {
                 el.moved = false
                 el.busy = false
@@ -304,8 +273,8 @@ export default {
             })
           }
 
-          if ((clientY > me.initialPos.y + 50 || clientY < me.initialPos.y - 50)) {
-            scroll.handle({ clientX: clientX, clientY: clientY }, me.$refs.ul, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize)
+          if ((me.clientY > me.initialPos.y + 50 || me.clientY < me.initialPos.y - 50)) {
+            scroll.handle({ clientX: me.clientX, clientY: me.clientY }, me.$refs.ul, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize)
           } else {
             scroll.stop()
           }
@@ -315,10 +284,23 @@ export default {
       }
 
       document.addEventListener('mouseup', () => {
-        dragAction = 'STOP'
+        me.dragAction = 'STOP'
         scroll.stop()
         if (linkList) {
           linkList = false
+          multi = false
+          me.dragging = false
+          me.dummyInserted = false
+          me.$refs.ul.classList.remove('wk-dl-ul-active')
+          let currentIndex = getIndex(me.current)
+          this.list.splice(currentIndex, 1);
+          [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
+            el.busy = false
+            el.moved = false
+            el.classList.remove('wk-dl-current')
+            el.style.transform = ``
+          })
+          me.setTransitionEnd()
           return
         }
         if (!me.dragging) {
@@ -328,15 +310,15 @@ export default {
             }
           })
           if (me.$refs.ul.classList.contains('wk-dl-ul-active')) {
-            clone && clone.parentNode && document.body.removeChild(clone)
+            me.clone && me.clone.parentNode && document.body.removeChild(me.clone)
           }
           return
         }
-        clone.classList.remove('wk-dl-clone')
-        clone.style.position = `fixed`
+        me.clone.classList.remove('wk-dl-clone')
+        me.clone.style.position = `fixed`
         me.dragging = false
 
-        let currentIndex = getIndex(current)
+        let currentIndex = getIndex(me.current)
         me.update(currentIndex, finalIndex)
 
         me.$nextTick(() => {
@@ -356,20 +338,21 @@ export default {
           me.dummyInserted = false
           current.style.visibility = `hidden`
           current.style.opacity = `0`
-          clone.style.top = `0`
-          clone.style.left = `0`
-          clone.style.transition = `150ms linear`
-          clone.addEventListener('transitionend', function () {
+          me.clone.style.top = `0`
+          me.clone.style.left = `0`
+          me.clone.style.transition = `150ms linear`
+          me.clone.addEventListener('transitionend', function () {
             current.style.transitionDuration = `0s`
             current.style.visibility = ``
             current.style.opacity = ``
             setTimeout(() => {
               current.style.transitionDuration = ``
-              clone && clone.parentNode && document.body.removeChild(clone)
+              me.clone && me.clone.parentNode && document.body.removeChild(me.clone)
             }, 1)
           }, false)
           let originalRect = current.getBoundingClientRect()
-          clone.style.transform = `translate3d(${originalRect.left}px, ${originalRect.top}px, 0px)`
+          me.clone.style.transform = `translate3d(${originalRect.left}px, ${originalRect.top}px, 0px)`
+          me.setTransitionEnd()
         })
       })
 
@@ -384,6 +367,41 @@ export default {
   methods: {
     update (from, to) {
       this.list.splice(to, 0, this.list.splice(from, 1)[0])
+    },
+    mousedown (e) {
+      const me = this
+
+      me.$refs.ul.classList.add('wk-dl-ul-active');
+      [].forEach.call(document.querySelectorAll('.wk-dl-clone'), el => {
+        document.body.removeChild(el)
+      })
+      me.current = e.target
+      me.clientX = e.clientX
+      me.clientY = e.clientY
+      const rect = me.current.getBoundingClientRect()
+      me.clone = e.target.cloneNode(true)
+      me.clone.classList.add('wk-dl-clone')
+      me.clone.style.top = `${rect.top}px`
+      me.clone.style.left = `${rect.left}px`
+      me.clone.style.width = `${me.current.offsetWidth}px`
+      me.clone.style.heith = `${me.current.offsetHeight}px`
+      document.body.appendChild(me.clone)
+      me.initialPos = { x: e.clientX, y: e.clientY }
+      me.current.classList.add('wk-dl-current')
+      me.dragAction = 'PRE-MOVE'
+    },
+    setTransitionEnd () {
+      const me = this;
+      [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
+        const ontransitionend = function (e) {
+          if (e.propertyName === 'transform') {
+            e.target.busy = false
+            e.target.style.pointerEvents = ``
+          }
+        }
+        el.removeEventListener('transitionend', ontransitionend, false)
+        el.addEventListener('transitionend', ontransitionend, false)
+      })
     }
   }
 }
