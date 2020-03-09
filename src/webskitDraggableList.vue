@@ -81,8 +81,6 @@ export default {
         }
       }
 
-      const getIndex = (el) => [...me.$refs.ul.querySelectorAll('li')].indexOf(el)
-
       const getElementByIndex = (index) => [...me.$refs.ul.querySelectorAll('li')][index]
 
       const checker = async () => {
@@ -91,7 +89,7 @@ export default {
           if (o.length === 1) {
             if (o[0] === me.$refs.ul) {
               if (!me.dummyInserted) {
-                await me.list.push({ name: 'dummy' })
+                await me.list.push(JSON.parse(document.querySelector('.wk-dl-clone').nodeData))
                 me.$nextTick(() => {
                   me.dummyInserted = true
                 })
@@ -135,7 +133,7 @@ export default {
 
         if ((me.clientX > me.initialPos.x + 50 || me.clientX < me.initialPos.x - 50) && !multi) {
           scroll.stop()
-          finalIndex = getIndex(me.current);
+          finalIndex = me.getIndex(me.current);
           [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
             if (el) {
               el.busy = false
@@ -158,7 +156,7 @@ export default {
 
           let o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + me.clone.offsetHeight / 2).nearest
 
-          if (getIndex(me.current) > getIndex(o.el)) {
+          if (me.getIndex(me.current) > me.getIndex(o.el)) {
             o = WebsKitTool.getNearestAndFurthestElements(elements, x, y).nearest
           } else {
             o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + me.clone.offsetHeight).nearest
@@ -171,10 +169,10 @@ export default {
           }
 
           const collideElement = o.el
-          const collideIndex = getIndex(collideElement)
+          const collideIndex = me.getIndex(collideElement)
           const rect1 = collideElement.getBoundingClientRect()
           const rect2 = me.clone.getBoundingClientRect()
-          let currentIndex = getIndex(me.current)
+          let currentIndex = me.getIndex(me.current)
 
           if (!collideElement.busy) {
             if (rect1.top < rect2.top && rect2.top < rect1.top + collideElement.offsetHeight / 2) {
@@ -182,7 +180,7 @@ export default {
                 data.push({ index: collideIndex, side: 'INIT' })
               } else {
                 if (overlaps.length > 1) {
-                  data.push({ index: getIndex(overlaps[overlaps.length - 2]), side: 'POST' })
+                  data.push({ index: me.getIndex(overlaps[overlaps.length - 2]), side: 'POST' })
                 } else {
                   data.push({ index: collideIndex, side: 'PRE' })
                 }
@@ -192,7 +190,7 @@ export default {
                 data.push({ index: collideIndex, side: 'INIT' })
               } else {
                 if (overlaps.length > 1) {
-                  data.push({ index: getIndex(overlaps[1]), side: 'PRE' })
+                  data.push({ index: me.getIndex(overlaps[1]), side: 'PRE' })
                 } else {
                   data.push({ index: collideIndex, side: 'POST' })
                 }
@@ -205,7 +203,7 @@ export default {
           }
 
           if (data.length) {
-            let currentIndex = getIndex(me.current)
+            let currentIndex = me.getIndex(me.current)
             let intersectIndex = data[0].index
             let lastNode = data[0]
             let side
@@ -240,7 +238,7 @@ export default {
             }
 
             [].forEach.call(elements, (el) => {
-              let uuid = getIndex(el)
+              let uuid = me.getIndex(el)
               let item = pool[uuid]
               if (item && item.side === 'INIT' && el.moved) {
                 el.moved = false
@@ -292,7 +290,7 @@ export default {
           me.dragging = false
           me.dummyInserted = false
           me.$refs.ul.classList.remove('wk-dl-ul-active')
-          let currentIndex = getIndex(me.current)
+          let currentIndex = me.getIndex(me.current)
           this.list.splice(currentIndex, 1);
           [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
             el.busy = false
@@ -318,7 +316,7 @@ export default {
         me.clone.style.position = `fixed`
         me.dragging = false
 
-        let currentIndex = getIndex(me.current)
+        let currentIndex = me.getIndex(me.current)
         me.update(currentIndex, finalIndex)
 
         me.$nextTick(() => {
@@ -385,10 +383,14 @@ export default {
       me.clone.style.left = `${rect.left}px`
       me.clone.style.width = `${me.current.offsetWidth}px`
       me.clone.style.heith = `${me.current.offsetHeight}px`
+      me.clone.nodeData = JSON.stringify(me.list[me.getIndex(me.current)])
       document.body.appendChild(me.clone)
       me.initialPos = { x: e.clientX, y: e.clientY }
       me.current.classList.add('wk-dl-current')
       me.dragAction = 'PRE-MOVE'
+    },
+    getIndex (el) {
+      return [...this.$refs.ul.querySelectorAll('li')].indexOf(el)
     },
     setTransitionEnd () {
       const me = this;
