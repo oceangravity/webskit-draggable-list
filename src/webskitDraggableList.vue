@@ -1,6 +1,6 @@
 <template>
   <ul class="wk-ul" ref="ul">
-    <li v-for="(item) in list" @mousedown.self="mousedown" :key="`item-${item.UUID}`">
+    <li v-for="(item) in list" @mousedown.self="mousedown" :key="`item-${item.id}`">
       <slot v-bind:item="item">
         {{ item[Object.keys(item)[0]] }}
       </slot>
@@ -53,10 +53,6 @@ export default {
   mounted () {
     const me = this
     me.list = [...me.value]
-
-    me.list.forEach((item) => {
-      item.UUID = me.createUUID()
-    })
 
     this.$nextTick(() => {
       let finalIndex
@@ -400,13 +396,6 @@ export default {
     },
     getIndex (el) {
       return [...this.$refs.ul.querySelectorAll('li')].indexOf(el)
-    },
-    createUUID () {
-      function s4 () {
-        return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1)
-      }
-
-      return `${s4() + s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`
     },
     setTransitionEnd () {
       const me = this;
