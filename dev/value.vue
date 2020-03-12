@@ -1,5 +1,5 @@
 <template>
-    <div @mousedown.prevent="onmousedown">
+    <div>
         <label>
             Quantity
             <input v-model="qty" type="number">

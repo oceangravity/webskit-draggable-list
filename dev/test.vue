@@ -5,9 +5,7 @@
                 <span v-if="item.isComplete">✓</span>
                 {{ item.name }}
                 <p>
-                    <keep-alive>
-                        <value :key="item.id"></value>
-                    </keep-alive>
+                    <value></value>
                 </p>
             </template>
         </webskit-draggable-list>
@@ -24,28 +22,28 @@ export default {
   data () {
     return {
       list_A: [
-        { id: 'N348DF43TH', name: 'Item 1' },
-        { id: 'W4D9MJ57TS', name: 'Item 2', isComplete: true },
-        { id: '98S57YGJT9', name: 'Item 3' },
-        { id: 'O345UHGXGW', name: 'Item 4' },
-        { id: 'D354Y23D4Y', name: 'Item 5' },
-        { id: 'D5Y2DY2Y2Y', name: 'Item 6' },
-        { id: 'DCH45BYUH3', name: 'Item 7' },
-        { id: '5B245YTV4F', name: 'Item 8' },
-        { id: 'YD3465U45D', name: 'Item 9' },
-        { id: 'GV4Y524F5Y', name: 'Item 10' }
+        { name: 'Item 1' },
+        { name: 'Item 2', isComplete: true },
+        { name: 'Item 3' },
+        { name: 'Item 4' },
+        { name: 'Item 5' },
+        { name: 'Item 6' },
+        { name: 'Item 7' },
+        { name: 'Item 8' },
+        { name: 'Item 9' },
+        { name: 'Item 10' }
       ],
       list_B: [
-        { id: 'N348DF43TH', name: 'Item A' },
-        { id: 'W4D9MJ57TS', name: 'Item B' },
-        { id: '98S57YGJT9', name: 'Item C' },
-        { id: 'O345UHGXGW', name: 'Item D' },
-        { id: 'D354Y23D4Y', name: 'Item E' },
-        { id: 'D5Y2DY2Y2Y', name: 'Item F' },
-        { id: 'DCH45BYUH3', name: 'Item G' },
-        { id: '5B245YTV4F', name: 'Item H' },
-        { id: 'YD3465U45D', name: 'Item I' },
-        { id: 'GV4Y524F5Y', name: 'Item J' }
+        { name: 'Item A' },
+        { name: 'Item B' },
+        { name: 'Item C' },
+        { name: 'Item D' },
+        { name: 'Item E' },
+        { name: 'Item F' },
+        { name: 'Item G' },
+        { name: 'Item H' },
+        { name: 'Item I' },
+        { name: 'Item J' }
       ]
     }
   },
