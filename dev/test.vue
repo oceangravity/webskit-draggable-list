@@ -1,7 +1,7 @@
 <template>
     <div id="app">
-        <webskit-draggable-list></webskit-draggable-list>
-        <webskit-draggable-list></webskit-draggable-list>
+        <webskit-draggable-list v-model="list_A"></webskit-draggable-list>
+        <webskit-draggable-list v-model="list_B"></webskit-draggable-list>
     </div>
 </template>
 
@@ -12,10 +12,42 @@ export default {
   name: 'App',
   data () {
     return {
+      list_A: [
+        { name: 'Item 1' },
+        { name: 'Item 2' },
+        { name: 'Item 3' },
+        { name: 'Item 4' },
+        { name: 'Item 5' },
+        { name: 'Item 6' },
+        { name: 'Item 7' },
+        { name: 'Item 8' },
+        { name: 'Item 9' },
+        { name: 'Item 10' }
+      ],
+      list_B: [
+        { name: 'Item A' },
+        { name: 'Item B' },
+        { name: 'Item C' },
+        { name: 'Item D' },
+        { name: 'Item E' },
+        { name: 'Item F' },
+        { name: 'Item G' },
+        { name: 'Item H' },
+        { name: 'Item I' },
+        { name: 'Item J' }
+      ]
     }
   },
   methods: {
     test () {
+    }
+  },
+  watch: {
+    list_A: function (data) {
+      console.log(JSON.stringify(data))
+    },
+    list_B: function (data) {
+      console.log(JSON.stringify(data))
     }
   },
   components: { webskitDraggableList }

@@ -14,6 +14,8 @@ export default {
   name: 'WebskitDraggableList',
   data () {
     return {
+      list: [],
+      blocked: true,
       current: null,
       clientX: 0,
       clientY: 0,
@@ -21,27 +23,12 @@ export default {
       dragging: false,
       dragAction: 'STOP',
       initialPos: null,
-      dummyInserted: false,
-      list: [
-        { name: 'Item 1' },
-        { name: 'Item 2' },
-        { name: 'Item 3' },
-        { name: 'Item 4' },
-        { name: 'Item 5' },
-        { name: 'Item 6' },
-        { name: 'Item 7' },
-        { name: 'Item 8' },
-        { name: 'Item 9' },
-        { name: 'Item 10' }
-      ]
+      dummyInserted: false
     }
-  },
-  computed: {
   },
   props: {
     value: {
-      type: Number,
-      default: 0
+      type: Array
     },
     options: {
       type: Object,
@@ -61,6 +48,7 @@ export default {
   },
   mounted () {
     const me = this
+    me.list = [...me.value]
     this.$nextTick(() => {
       let finalIndex
       let data = []
@@ -89,6 +77,7 @@ export default {
           if (o.length === 1) {
             if (o[0] === me.$refs.ul) {
               if (!me.dummyInserted) {
+                this.blocked = true
                 await me.list.push(JSON.parse(document.querySelector('.wk-dl-clone').nodeData))
                 me.$nextTick(() => {
                   me.dummyInserted = true
@@ -131,7 +120,7 @@ export default {
           return
         }
 
-        if ((me.clientX > me.initialPos.x + 50 || me.clientX < me.initialPos.x - 50) && !multi) {
+        if ((me.clientX > me.initialPos.x + 100 || me.clientX < me.initialPos.x - 100) && !multi) {
           scroll.stop()
           finalIndex = me.getIndex(me.current);
           [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
@@ -299,6 +288,7 @@ export default {
             el.style.transform = ``
           })
           me.setTransitionEnd()
+          me.$emit('input', JSON.parse(JSON.stringify(me.list)))
           return
         }
         if (!me.dragging) {
@@ -351,6 +341,9 @@ export default {
           let originalRect = current.getBoundingClientRect()
           me.clone.style.transform = `translate3d(${originalRect.left}px, ${originalRect.top}px, 0px)`
           me.setTransitionEnd()
+          if (currentIndex !== finalIndex) {
+            me.$emit('input', JSON.parse(JSON.stringify(me.list)))
+          }
         })
       })
 
@@ -361,6 +354,13 @@ export default {
   destroyed () {
   },
   watch: {
+    list: {
+      immediate: true,
+      handler: function () {
+        // if (!this.blocked) this.$emit('input', value)
+        // this.blocked = false
+      }
+    }
   },
   methods: {
     update (from, to) {
