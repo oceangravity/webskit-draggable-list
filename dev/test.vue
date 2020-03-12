@@ -5,11 +5,15 @@
                 <span v-if="item.isComplete">✓</span>
                 {{ item.name }}
                 <p>
-                    <value></value>
+                    <value v-model="item.value"></value>
                 </p>
             </template>
         </webskit-draggable-list>
-        <webskit-draggable-list v-model="list_B"></webskit-draggable-list>
+        <webskit-draggable-list v-model="list_B">
+            <template slot-scope="{ item }">
+                {{ item.name }} <strong style="padding-left: 10px"> {{ item.value ? item.value : 0 }}</strong>
+            </template>
+        </webskit-draggable-list>
     </div>
 </template>
 
@@ -22,16 +26,16 @@ export default {
   data () {
     return {
       list_A: [
-        { name: 'Item 1' },
-        { name: 'Item 2', isComplete: true },
-        { name: 'Item 3' },
-        { name: 'Item 4' },
-        { name: 'Item 5' },
-        { name: 'Item 6' },
-        { name: 'Item 7' },
-        { name: 'Item 8' },
-        { name: 'Item 9' },
-        { name: 'Item 10' }
+        { name: 'Item 1', value: 100 },
+        { name: 'Item 2', value: 100, isComplete: true },
+        { name: 'Item 3', value: 100 },
+        { name: 'Item 4', value: 100 },
+        { name: 'Item 5', value: 100 },
+        { name: 'Item 6', value: 100 },
+        { name: 'Item 7', value: 100 },
+        { name: 'Item 8', value: 100 },
+        { name: 'Item 9', value: 100 },
+        { name: 'Item 10', value: 100 }
       ],
       list_B: [
         { name: 'Item A' },
@@ -84,7 +88,6 @@ export default {
         font-family: "Avenir", Helvetica, Arial, sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        text-align: center;
         color: #2c3e50;
         display: flex;
     }

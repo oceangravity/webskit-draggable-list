@@ -1,32 +1,25 @@
 <template>
-    <div>
+    <div class="wk-value">
         <label>
             Quantity
-            <input v-model="qty" type="number">
+            <input :value="value" @input="$emit('input', parseFloat($event.target.value))" type="number">
         </label>
-        <p>
-            {{ qty }}
-        </p>
     </div>
 </template>
 
 <script>
 export default {
   name: 'value',
-  data () {
-    return {
-      qty: 0
-    }
-  },
-  methods: {
-    onmousedown (e) {
-      e.stopPropagation()
-      this.qty++
+  props: {
+    value: {
+      type: Number
     }
   }
 }
 </script>
 
 <style scoped>
-
+    .wk-value {
+        padding: 20px;
+    }
 </style>
