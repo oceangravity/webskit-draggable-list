@@ -1,6 +1,10 @@
 <template>
   <ul class="wk-ul" ref="ul">
-    <li v-for="(item, index) in list" @mousedown="mousedown" :key="index">{{ item.name }}</li>
+    <li v-for="(item) in list" @mousedown="mousedown" :key="`item-${item.id}`">
+      <slot v-bind:item="item">
+        {{ item.name }}
+      </slot>
+    </li>
   </ul>
 </template>
 
