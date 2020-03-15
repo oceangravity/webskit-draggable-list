@@ -1,7 +1,7 @@
 <template>
     <div id="app">
-        <webskit-draggable-list v-model="list_A" :options="options"></webskit-draggable-list>
-        <webskit-draggable-list v-model="list_B"></webskit-draggable-list>
+        <webskit-draggable-list v-model="list_A" :options="options_A"></webskit-draggable-list>
+        <webskit-draggable-list v-model="list_B" :options="options_B"></webskit-draggable-list>
         <input type="button" @mousedown="changeProp" value="change prop">
     </div>
 </template>
@@ -13,8 +13,12 @@ export default {
   name: 'App',
   data () {
     return {
-      options: {
-        edgeSize: 50
+      options_A: {
+        widgetID: 'list-A'
+      },
+      options_B: {
+        widgetID: 'list-B',
+        accepts: ['list-A']
       },
       list_A: [
         { id: 1, name: 'Item 1' },
@@ -53,11 +57,7 @@ export default {
   components: { webskitDraggableList },
   methods: {
     changeProp () {
-      if (this.options.edgeSize === 50) {
-        this.options.edgeSize = 100
-      } else {
-        this.options.edgeSize = 50
-      }
+      this.options_B.disableRemoteDrop = !this.options_B.disableRemoteDrop
     }
   }
 }

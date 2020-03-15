@@ -4,6 +4,24 @@ class AutoScroll {
     this.timer = null
   }
 
+  info (event, container, et, el, eb, er, yBottom = 0) {
+    const me = this
+    const viewportX = event.clientX
+    const viewportY = event.clientY - container.offsetTop
+    const viewportWidth = container.clientWidth
+    const viewportHeight = container.clientHeight
+    const edgeTop = et
+    const edgeLeft = el
+    const edgeBottom = viewportHeight - eb
+    const edgeRight = viewportWidth - er
+    const isInLeftEdge = viewportX < el
+    const isInRightEdge = viewportX > edgeRight
+    const isInTopEdge = viewportY < et
+    const isInBottomEdge = (viewportY + yBottom) > edgeBottom
+
+    // console.log((edgeTop - viewportY) / et)
+  }
+
   handle (event, container, et, el, eb, er, yBottom = 0) {
     const me = this
     const viewportX = event.clientX
@@ -17,7 +35,7 @@ class AutoScroll {
     const isInLeftEdge = viewportX < el
     const isInRightEdge = viewportX > edgeRight
     const isInTopEdge = viewportY < et
-    const isInBottomEdge = (viewportY - yBottom) > edgeBottom
+    const isInBottomEdge = (viewportY + yBottom) > edgeBottom
 
     if (!(isInLeftEdge || isInRightEdge || isInTopEdge || isInBottomEdge)) {
       return
@@ -63,7 +81,7 @@ class AutoScroll {
         // if (intensity >= 0.3) intensity = 0.1
         nextScrollY = nextScrollY - maxStep * intensity
       } else if (isInBottomEdge && canScrollDown) {
-        intensity = (viewportY - edgeBottom) / eb
+        intensity = ((viewportY + yBottom) - edgeBottom) / eb
         nextScrollY = nextScrollY + maxStep * intensity
       }
 
