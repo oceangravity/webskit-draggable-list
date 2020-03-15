@@ -12,7 +12,8 @@
 import WebsKitTool from 'webskit-nearest-elements'
 import WebsKitInViewport from 'webskit-is-element-in-viewport'
 import WebsKitOverlaps from 'webskit-get-overlaps-elements'
-import WebsKitAutoScroll from 'webskit-auto-scroll-on-edges'
+// import WebsKitAutoScroll from 'webskit-auto-scroll-on-edges'
+import WebsKitAutoScroll from './autoscroll/index.js'
 
 export default {
   name: 'WebskitDraggableList',
@@ -36,18 +37,9 @@ export default {
     },
     options: {
       type: Object,
-      default: function () {
-        return {
-          edgeSize: 50,
-          size: 120,
-          arcColor: 'rgb(53, 57, 60)',
-          arcBackgroundColor: '#9b9bb5',
-          internalCircleBackgroundColor: '#4d4d5a',
-          handleColor: 'white',
-          setPositionColor: 'gray',
-          textColor: '#b4d5d8'
-        }
-      }
+      default: () => ({
+        edgeSize: 50
+      })
     }
   },
   mounted () {
@@ -266,10 +258,11 @@ export default {
           }
 
           if ((me.clientY > me.initialPos.y + 50 || me.clientY < me.initialPos.y - 50)) {
-            scroll.handle({ clientX: me.clientX, clientY: me.clientY }, me.$refs.ul, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize)
+            scroll.handle({ clientX: me.clientX, clientY: rect2.top }, me.$refs.ul, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize, me.options.edgeSize, me.clone.offsetHeight)
           } else {
             scroll.stop()
           }
+
         }
 
         requestAnimationFrame(checker)

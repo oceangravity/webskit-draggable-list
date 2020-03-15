@@ -1,7 +1,8 @@
 <template>
     <div id="app">
-        <webskit-draggable-list v-model="list_A"></webskit-draggable-list>
+        <webskit-draggable-list v-model="list_A" :options="options"></webskit-draggable-list>
         <webskit-draggable-list v-model="list_B"></webskit-draggable-list>
+        <input type="button" @mousedown="changeProp" value="change prop">
     </div>
 </template>
 
@@ -12,6 +13,9 @@ export default {
   name: 'App',
   data () {
     return {
+      options: {
+        edgeSize: 50
+      },
       list_A: [
         { id: 1, name: 'Item 1' },
         { id: 2, name: 'Item 2', isComplete: true },
@@ -38,10 +42,6 @@ export default {
       ]
     }
   },
-  methods: {
-    test () {
-    }
-  },
   watch: {
     list_A: function (data) {
       console.log(JSON.stringify(data))
@@ -50,7 +50,16 @@ export default {
       console.log(JSON.stringify(data))
     }
   },
-  components: { webskitDraggableList }
+  components: { webskitDraggableList },
+  methods: {
+    changeProp () {
+      if (this.options.edgeSize === 50) {
+        this.options.edgeSize = 100
+      } else {
+        this.options.edgeSize = 50
+      }
+    }
+  }
 }
 </script>
 
