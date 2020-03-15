@@ -262,7 +262,6 @@ export default {
           } else {
             scroll.stop()
           }
-
         }
 
         requestAnimationFrame(checker)
