@@ -377,9 +377,9 @@ export default {
     options: {
       immediate: true,
       deep: true,
-      handler: function (newOptions) {
+      handler: function () {
         let opts = { ...this.defaultOptions, ...this.options }
-        opts.accepts = [...this.options.accepts || [], ...this.defaultOptions.accepts]
+        opts.accepts = [...this.defaultOptions.accepts, ...this.options.accepts || []]
         this.$set(this, 'opts', opts)
       }
     }
