@@ -57,7 +57,7 @@ export default {
   components: { webskitDraggableList },
   methods: {
     changeProp () {
-      this.options_B.disableRemoteDrop = !this.options_B.disableRemoteDrop
+      this.$set(this.options_B, 'disableRemoteDrop', !this.options_B.disableRemoteDrop)
     }
   }
 }

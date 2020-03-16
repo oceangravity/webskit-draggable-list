@@ -30,6 +30,7 @@ export default {
       initialPos: null,
       dummyInserted: false,
       listBackup: '',
+      opts: {},
       defaultOptions: {
         scrollTopEdge: false,
         scrollBottomEdge: false,
@@ -46,10 +47,7 @@ export default {
     value: {
       type: Array
     },
-    options: {
-      type: Object,
-      default: () => ({})
-    }
+    options: Object
   },
   mounted () {
     const me = this
@@ -376,11 +374,13 @@ export default {
   destroyed () {
   },
   watch: {
-    list: {
+    options: {
       immediate: true,
-      handler: function () {
-        // if (!this.blocked) this.$emit('input', value)
-        // this.blocked = false
+      deep: true,
+      handler: function (newOptions) {
+        let opts = { ...this.defaultOptions, ...this.options }
+        opts.accepts = [...this.options.accepts || [], ...this.defaultOptions.accepts]
+        this.$set(this, 'opts', opts)
       }
     }
   },
@@ -430,11 +430,6 @@ export default {
     }
   },
   computed: {
-    opts: function () {
-      let opts = { ...this.options, ...this.defaultOptions }
-      opts.accepts = [...this.options.accepts || [], ...this.defaultOptions.accepts]
-      return opts
-    }
   }
 }
 </script>
