@@ -39,6 +39,7 @@ export default {
         limitSortableX: 100,
         minPixelsToDrag: 2,
         accepts: [],
+        lockAxis: false,
         disableRemoteDrop: false
       }
     }
@@ -74,6 +75,12 @@ export default {
           me.dragging = true
           let x = me.clientX - me.initialPos.x
           let y = me.clientY - me.initialPos.y
+          if (me.opts.lockAxis === 'x') {
+            x = 0
+          }
+          if (me.opts.lockAxis === 'y') {
+            y = 0
+          }
           me.clone.style.transform = `translate3d(${x}px, ${y}px, 0px)`
         }
       }
