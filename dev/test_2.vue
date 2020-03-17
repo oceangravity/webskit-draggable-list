@@ -1,6 +1,6 @@
 <template>
     <div id="app">
-        <webskit-draggable-list v-model="list_A">
+        <webskit-draggable-list v-model="list_A" :options="options_A">
             <template slot-scope="{ item }">
                 <span v-if="item.isComplete">✓</span>
                 {{ item.name }}
@@ -9,7 +9,7 @@
                 </p>
             </template>
         </webskit-draggable-list>
-        <webskit-draggable-list v-model="list_B">
+        <webskit-draggable-list v-model="list_B" :options="options_B">
             <template slot-scope="{ item }">
                 {{ item.name }} <strong style="padding-left: 10px"> {{ item.value ? item.value : 0 }}</strong>
             </template>
@@ -25,6 +25,12 @@ export default {
   name: 'App',
   data () {
     return {
+      options_A: {
+        widgetID: 'list-A'
+      },
+      options_B: {
+        widgetID: 'list-B'
+      },
       list_A: [
         { id: 1, name: 'Item 1' },
         { id: 2, name: 'Item 2', isComplete: true },

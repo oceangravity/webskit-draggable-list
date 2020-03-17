@@ -1,7 +1,12 @@
 <template>
     <div id="app">
         <webskit-draggable-list v-model="list_A" :options="options_A"></webskit-draggable-list>
-        <webskit-draggable-list v-model="list_B" :options="options_B"></webskit-draggable-list>
+        <webskit-draggable-list v-model="list_B" :options="options_B">
+            <template slot-scope="{ item }">
+                <div class="list-B-drag-handle"></div>
+                {{ item.name }}
+            </template>
+        </webskit-draggable-list>
         <input type="button" @mousedown="changeProp" value="change prop">
     </div>
 </template>
@@ -18,7 +23,8 @@ export default {
       },
       options_B: {
         widgetID: 'list-B',
-        accepts: ['list-A']
+        accepts: ['list-A'],
+        dragHandle: 'list-B-drag-handle'
       },
       list_A: [
         { id: 1, name: 'Item 1' },
@@ -124,5 +130,12 @@ export default {
         user-select: none;
         color: #333;
         font-weight: 400;
+    }
+
+    .list-B-drag-handle {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+        background-color: #2c3e50;
     }
 </style>

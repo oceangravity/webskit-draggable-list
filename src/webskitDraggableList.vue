@@ -1,6 +1,6 @@
 <template>
   <ul class="wk-ul" ref="ul">
-    <li v-for="(item) in list" @mousedown.self="mousedown" :key="`item-${item.id}`">
+    <li v-for="(item) in list" @mousedown="mousedown" :key="`item-${item.id}`">
       <slot v-bind:item="item">
         {{ item[Object.keys(item)[0]] }}
       </slot>
@@ -40,7 +40,8 @@ export default {
         minPixelsToDrag: 2,
         accepts: [],
         lockAxis: false,
-        disableRemoteDrop: false
+        disableRemoteDrop: false,
+        dragHandle: false
       }
     }
   },
@@ -48,7 +49,10 @@ export default {
     value: {
       type: Array
     },
-    options: Object
+    options: {
+      type: Object,
+      default: () => ({})
+    }
   },
   mounted () {
     const me = this
@@ -85,8 +89,6 @@ export default {
         }
       }
 
-      const getElementByIndex = (index) => [...me.$refs.ul.querySelectorAll('li')][index]
-
       const checker = async () => {
         if (document.querySelector('.wk-dl-clone')) {
           let o = WebsKitOverlaps.getOverlaps(document.querySelector('.wk-dl-clone'), document.querySelectorAll('ul:not(.wk-dl-ul-active)'))
@@ -104,7 +106,7 @@ export default {
                 multi = true
                 me.initialPos = { x: 0, y: 0 }
                 me.clone = document.querySelector('.wk-dl-clone')
-                me.current = getElementByIndex(me.list.length - 1)
+                me.current = me.getElementByIndex(me.list.length - 1)
                 me.current.classList.add('wk-dl-current')
               }
             } else if (o[0] && o[0].listData && o[0].listData.accepts && !o[0].listData.disableRemoteDrop && o[0].listData.accepts.find(w => w === document.querySelector('.wk-dl-clone').listData.widgetID)) {
@@ -346,7 +348,7 @@ export default {
               el.style.transitionDuration = ``
             }, 1)
           })
-          let current = getElementByIndex(finalIndex)
+          let current = me.getElementByIndex(finalIndex)
           me.$refs.ul.classList.remove('wk-dl-ul-active')
           multi = false
           me.dummyInserted = false
@@ -375,6 +377,7 @@ export default {
       })
 
       document.addEventListener('mousemove', mousemove)
+
       requestAnimationFrame(checker)
     })
   },
@@ -395,18 +398,32 @@ export default {
     update (from, to) {
       this.list.splice(to, 0, this.list.splice(from, 1)[0])
     },
+    getElementByIndex (index) {
+      return [...this.$refs.ul.querySelectorAll('li')][index]
+    },
     mousedown (e) {
       const me = this
+      let target = e.target
+
+      if (me.opts.dragHandle && !target.classList.contains(me.opts.dragHandle)) {
+        return
+      } else if (!me.opts.dragHandle && me.getIndex(target) < 0) {
+        return
+      }
+
+      if (me.opts.dragHandle) {
+        target = target.closest('LI')
+      }
 
       me.$refs.ul.classList.add('wk-dl-ul-active');
       [].forEach.call(document.querySelectorAll('.wk-dl-clone'), el => {
         document.body.removeChild(el)
       })
-      me.current = e.target
+      me.current = target
       me.clientX = e.clientX
       me.clientY = e.clientY
       const rect = me.current.getBoundingClientRect()
-      me.clone = e.target.cloneNode(true)
+      me.clone = target.cloneNode(true)
       me.clone.classList.add('wk-dl-clone')
       me.clone.style.top = `${rect.top}px`
       me.clone.style.left = `${rect.left}px`
