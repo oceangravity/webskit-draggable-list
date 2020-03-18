@@ -1,6 +1,6 @@
 <template>
   <ul class="wk-ul" ref="ul">
-    <li v-for="(item) in list" @mousedown="mousedown" :key="`item-${item.id}`">
+    <li v-for="(item) in list" @mousedown="mousedown" :key="`item-${item.id}`" :class="{ 'wk-dl-opacity-zero' : item.opacityZero }">
       <slot v-bind:item="item">
         {{ item[Object.keys(item)[0]] }}
       </slot>
@@ -31,6 +31,7 @@ export default {
       dummyInserted: false,
       listBackup: '',
       opts: {},
+      dragEventFired: false,
       defaultOptions: {
         scrollTopEdge: false,
         scrollBottomEdge: false,
@@ -86,6 +87,11 @@ export default {
             y = 0
           }
           me.clone.style.transform = `translate3d(${x}px, ${y}px, 0px)`
+          me.$emit('dragging', me.current, me.list[me.getIndex(me.current)])
+          if (!me.dragEventFired) {
+            me.$emit('start-drag', me.current, me.list[me.getIndex(me.current)])
+            me.dragEventFired = true
+          }
         }
       }
 
@@ -97,11 +103,14 @@ export default {
               if (!me.dummyInserted) {
                 me.blocked = true
                 me.listBackup = JSON.stringify(me.list)
-                await me.list.push(JSON.parse(document.querySelector('.wk-dl-clone').nodeData))
+                let data = JSON.parse(document.querySelector('.wk-dl-clone').nodeData)
+                data.opacityZero = true
+                await me.list.push(data)
                 me.$nextTick(() => {
                   me.dummyInserted = true
                 })
               } else {
+                me.$delete(me.list[me.list.length - 1], 'opacityZero')
                 me.dragging = true
                 multi = true
                 me.initialPos = { x: 0, y: 0 }
@@ -163,6 +172,12 @@ export default {
           data = []
 
           let o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + me.clone.offsetHeight / 2).nearest
+
+          if (!o.el) {
+            scroll.stop()
+            requestAnimationFrame(checker)
+            return
+          }
 
           if (me.getIndex(me.current) > me.getIndex(o.el)) {
             o = WebsKitTool.getNearestAndFurthestElements(elements, x, y).nearest
@@ -292,6 +307,7 @@ export default {
 
       document.addEventListener('mouseup', () => {
         me.dragAction = 'STOP'
+        me.dragEventFired = false
         scroll.stop()
 
         if (linkList) {
@@ -311,6 +327,7 @@ export default {
           })
           me.setTransitionEnd()
           me.$emit('input', JSON.parse(JSON.stringify(me.list)))
+          me.$emit('drop', me.current, me.list, me.list[me.getIndex(me.current)])
           return
         }
         if (!me.dragging) {
@@ -335,6 +352,7 @@ export default {
         me.dragging = false
 
         let currentIndex = me.getIndex(me.current)
+        if (finalIndex === undefined) finalIndex = currentIndex
         me.update(currentIndex, finalIndex)
 
         me.$nextTick(() => {
@@ -372,6 +390,7 @@ export default {
           me.setTransitionEnd()
           if (currentIndex !== finalIndex) {
             me.$emit('input', JSON.parse(JSON.stringify(me.list)))
+            me.$emit('drop', current, me.list, me.list[me.getIndex(current)])
           }
         })
       })
@@ -414,6 +433,8 @@ export default {
       if (me.opts.dragHandle) {
         target = target.closest('LI')
       }
+
+      me.$emit('element-mousedown', target, me.list[me.getIndex(target)])
 
       me.$refs.ul.classList.add('wk-dl-ul-active');
       [].forEach.call(document.querySelectorAll('.wk-dl-clone'), el => {
@@ -470,5 +491,9 @@ export default {
     pointer-events: none;
     visibility: hidden;
     opacity: 0;
+  }
+
+  .wk-dl-opacity-zero {
+    opacity: 0 !important;
   }
 </style>

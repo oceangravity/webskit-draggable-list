@@ -1,10 +1,14 @@
 <template>
     <div id="app">
-        <webskit-draggable-list v-model="list_A" :options="options_A"></webskit-draggable-list>
+        <webskit-draggable-list v-model="list_A" :options="options_A" @start-drag="startDrag" @drop="drop">
+            <template slot-scope="{ item }">
+                <strong>{{ item.name }}</strong>
+            </template>
+        </webskit-draggable-list>
         <webskit-draggable-list v-model="list_B" :options="options_B">
             <template slot-scope="{ item }">
                 <div class="list-B-drag-handle"></div>
-                {{ item.name }}
+                <strong>{{ item.name }}</strong>
             </template>
         </webskit-draggable-list>
         <input type="button" @mousedown="changeProp" value="change prop">
@@ -19,7 +23,8 @@ export default {
   data () {
     return {
       options_A: {
-        widgetID: 'list-A'
+        widgetID: 'list-A',
+        accepts: ['list-B']
       },
       options_B: {
         widgetID: 'list-B',
@@ -64,6 +69,12 @@ export default {
   methods: {
     changeProp () {
       this.$set(this.options_B, 'disableRemoteDrop', !this.options_B.disableRemoteDrop)
+    },
+    startDrag (a, b) {
+      console.log(a, b)
+    },
+    drop (a, b, c) {
+      console.log(a, b, c)
     }
   }
 }
