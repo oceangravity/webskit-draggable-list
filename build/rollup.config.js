@@ -11,7 +11,7 @@ const argv = minimist(process.argv.slice(2))
 const config = {
   input: 'src/wrapper.js',
   output: {
-    name: 'WebskitKnobControl',
+    name: 'WebskitDraggableList',
     exports: 'named'
   },
   plugins: [

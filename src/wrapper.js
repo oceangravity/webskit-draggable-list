@@ -1,9 +1,9 @@
-import component from './webskitKnobControl.vue'
+import component from './webskitDraggableList.vue'
 
 function install (Vue) {
   if (install.installed) return
   install.installed = true
-  Vue.component('WebskitKnobControl', component)
+  Vue.component('WebskitDraggableList', component)
 }
 
 const plugin = {
