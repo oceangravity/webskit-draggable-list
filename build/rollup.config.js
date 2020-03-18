@@ -5,6 +5,7 @@ import commonjs from 'rollup-plugin-commonjs'
 import replace from 'rollup-plugin-replace'
 import uglify from 'rollup-plugin-uglify-es'
 import minimist from 'minimist'
+import babel from 'rollup-plugin-babel'
 
 const argv = minimist(process.argv.slice(2))
 
@@ -26,7 +27,15 @@ const config = {
         isProduction: true
       }
     }),
-    buble()
+    babel({
+      runtimeHelpers: true,
+      exclude: 'node_modules/**', // only transpile our source code
+      presets: ['@babel/env'],
+      plugins: [
+        '@babel/transform-runtime',
+        '@babel/transform-async-to-generator'
+      ]
+    })
   ]
 }
 
