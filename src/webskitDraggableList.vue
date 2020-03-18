@@ -327,7 +327,7 @@ export default {
           })
           me.setTransitionEnd()
           me.$emit('input', JSON.parse(JSON.stringify(me.list)))
-          me.$emit('drop', me.current, me.list, me.list[me.getIndex(me.current)])
+          me.$emit('origin-update', me.current, me.list, me.list[me.getIndex(me.current)])
           return
         }
         if (!me.dragging) {
