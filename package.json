@@ -1,6 +1,6 @@
 {
   "name": "webskit-draggable-list",
-  "version": "1.0.12",
+  "version": "1.0.14",
   "description": "Vue Draggable List",
   "main": "dist/webskitDraggableList.umd.js",
   "module": "dist/webskitDraggableList.esm.js",
@@ -71,7 +71,7 @@
   },
   "homepage": "https://github.com/oceangravity/webskit-draggable-list#readme",
   "dependencies": {
-    "webskit-auto-scroll-on-edges": "^1.0.3",
+    "webskit-auto-scroll-on-edges": "^1.0.5",
     "webskit-get-overlaps-elements": "^1.0.0",
     "webskit-is-element-in-viewport": "^1.0.0",
     "webskit-nearest-elements": "1.0.0"

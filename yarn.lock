@@ -8333,10 +8333,10 @@ webpack@^4.41.6:
     watchpack "^1.6.0"
     webpack-sources "^1.4.1"
 
-webskit-auto-scroll-on-edges@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/webskit-auto-scroll-on-edges/-/webskit-auto-scroll-on-edges-1.0.3.tgz#b91ff6289abf7d4dc9ebc0a9c1c9ddd747260a46"
-  integrity sha512-QWslBYcZ9zGRaAt9BmWw+g6g2cx8MKiY4o/4dw6IygKBioC4uOw6O5Zvf06hZFboSlwPJVONOyVNVSOdx/GYhg==
+webskit-auto-scroll-on-edges@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/webskit-auto-scroll-on-edges/-/webskit-auto-scroll-on-edges-1.0.5.tgz#471f0a65bd564c3c94d6282f50b0fa2d5dbe907a"
+  integrity sha512-Ya/34pSrvOfdJHog/qdwU5koDDT/6mv8wgxva75fKfB0fg70ppG9MByg1CFdVE84Ld6bDMDrQLghRAschhf7zA==
   dependencies:
     yarn "^1.22.4"
 

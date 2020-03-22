@@ -37,12 +37,14 @@ export default {
         scrollBottomEdge: false,
         scrollLeftEdge: false,
         scrollRightEdge: false,
+        scrollContainer: false,
         limitSortableX: 100,
         minPixelsToDrag: 2,
         accepts: [],
         lockAxis: false,
         disableRemoteDrop: false,
         dragHandle: false,
+        horizontal: false,
         cloneClass: 'wk-dl-clone--custom',
         cloneTransition: '300ms linear'
       }
@@ -150,7 +152,14 @@ export default {
           return
         }
 
-        if ((me.clientX > me.initialPos.x + me.opts.limitSortableX || me.clientX < me.initialPos.x - me.opts.limitSortableX) && !multi) {
+        let checkLimit
+        if (me.opts.horizontal) {
+          checkLimit = false
+        } else {
+          checkLimit = (me.clientX > me.initialPos.x + me.opts.limitSortableX || me.clientX < me.initialPos.x - me.opts.limitSortableX)
+        }
+
+        if (checkLimit && !multi) {
           scroll.stop()
           finalIndex = me.getIndex(me.current);
           [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
@@ -173,7 +182,7 @@ export default {
           me.current.reverted = false
           data = []
 
-          let o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + me.clone.offsetHeight / 2).nearest
+          let o = WebsKitTool.getNearestAndFurthestElements(elements, me.opts.horizontal ? x + me.clone.offsetWidth / 2 : x, !me.opts.horizontal ? y + me.clone.offsetHeight / 2 : y).nearest
 
           if (!o.el) {
             scroll.stop()
@@ -184,7 +193,7 @@ export default {
           if (me.getIndex(me.current) > me.getIndex(o.el)) {
             o = WebsKitTool.getNearestAndFurthestElements(elements, x, y).nearest
           } else {
-            o = WebsKitTool.getNearestAndFurthestElements(elements, x, y + me.clone.offsetHeight).nearest
+            o = WebsKitTool.getNearestAndFurthestElements(elements, me.opts.horizontal ? x + me.clone.offsetWidth / 2 : x, !me.opts.horizontal ? y + me.clone.offsetHeight / 2 : y).nearest
           }
 
           let overlaps = WebsKitOverlaps.getOverlaps(me.clone, elements)
@@ -199,31 +208,61 @@ export default {
           const rect2 = me.clone.getBoundingClientRect()
           let currentIndex = me.getIndex(me.current)
 
-          if (!collideElement.busy) {
-            if (rect1.top < rect2.top && rect2.top < rect1.top + collideElement.offsetHeight / 2) {
-              if (collideElement.moved) {
-                data.push({ index: collideIndex, side: 'INIT' })
-              } else {
-                if (overlaps.length > 1) {
-                  data.push({ index: me.getIndex(overlaps[overlaps.length - 2]), side: 'POST' })
+          if (me.opts.horizontal) {
+            if (!collideElement.busy) {
+              if (rect1.left < rect2.left && rect2.left < rect1.left + collideElement.offsetWidth / 2) {
+                if (collideElement.moved) {
+                  data.push({ index: collideIndex, side: 'INIT' })
                 } else {
-                  data.push({ index: collideIndex, side: 'PRE' })
+                  if (overlaps.length > 1) {
+                    data.push({ index: me.getIndex(overlaps[overlaps.length - 2]), side: 'POST' })
+                  } else {
+                    data.push({ index: collideIndex, side: 'PRE' })
+                  }
                 }
-              }
-            } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + me.clone.offsetHeight) {
-              if (collideElement.moved && currentIndex > collideIndex) {
-                data.push({ index: collideIndex, side: 'INIT' })
-              } else {
-                if (overlaps.length > 1) {
-                  data.push({ index: me.getIndex(overlaps[1]), side: 'PRE' })
+              } else if (rect1.left + collideElement.offsetWidth / 2 < rect2.left + me.clone.offsetWidth) {
+                if (collideElement.moved && currentIndex > collideIndex) {
+                  data.push({ index: collideIndex, side: 'INIT' })
                 } else {
-                  data.push({ index: collideIndex, side: 'POST' })
+                  if (overlaps.length > 1) {
+                    data.push({ index: me.getIndex(overlaps[1]), side: 'PRE' })
+                  } else {
+                    data.push({ index: collideIndex, side: 'POST' })
+                  }
                 }
+              } else if (rect2.left < rect1.left + collideElement.offsetWidth / 2) {
+                data.push({ index: collideIndex, side: 'PRE' })
+              } else if (rect1.left + collideElement.offsetWidth / 2 < rect2.left + me.clone.offsetWidth) {
+                data.push({ index: collideIndex, side: 'POST' })
               }
-            } else if (rect2.top < rect1.top + collideElement.offsetHeight / 2) {
-              data.push({ index: collideIndex, side: 'PRE' })
-            } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + me.clone.offsetHeight) {
-              data.push({ index: collideIndex, side: 'POST' })
+            }
+          } else {
+            if (!collideElement.busy) {
+              if (rect1.top < rect2.top && rect2.top < rect1.top + collideElement.offsetHeight / 2) {
+                if (collideElement.moved) {
+                  data.push({ index: collideIndex, side: 'INIT' })
+                } else {
+                  if (overlaps.length > 1) {
+                    data.push({ index: me.getIndex(overlaps[overlaps.length - 2]), side: 'POST' })
+                  } else {
+                    data.push({ index: collideIndex, side: 'PRE' })
+                  }
+                }
+              } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + me.clone.offsetHeight) {
+                if (collideElement.moved && currentIndex > collideIndex) {
+                  data.push({ index: collideIndex, side: 'INIT' })
+                } else {
+                  if (overlaps.length > 1) {
+                    data.push({ index: me.getIndex(overlaps[1]), side: 'PRE' })
+                  } else {
+                    data.push({ index: collideIndex, side: 'POST' })
+                  }
+                }
+              } else if (rect2.top < rect1.top + collideElement.offsetHeight / 2) {
+                data.push({ index: collideIndex, side: 'PRE' })
+              } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + me.clone.offsetHeight) {
+                data.push({ index: collideIndex, side: 'POST' })
+              }
             }
           }
 
@@ -283,11 +322,11 @@ export default {
               if (currentIndex > uuid && item && item.side === 'PRE' && el !== me.current && el !== me.clone && !el.moved) {
                 el.busy = true
                 el.moved = true
-                el.style.transform = `translate3d(0px, ${me.current.offsetHeight}px, 0px)`
+                el.style.transform = me.opts.horizontal ? `translate3d(${me.current.offsetWidth}px, 0px, 0px)` : `translate3d(0px, ${me.current.offsetHeight}px, 0px)`
               } else if (currentIndex < uuid && item && item.side === 'POST' && el !== me.current && el !== me.clone && !el.moved) {
                 el.busy = true
                 el.moved = true
-                el.style.transform = `translate3d(0px, -${ me.current.offsetHeight }px, 0px)`
+                el.style.transform = me.opts.horizontal ? `translate3d(-${me.current.offsetWidth}px, 0px, 0px)` : `translate3d(0px, -${me.current.offsetHeight}px, 0px)`
               } else if (!item) {
                 el.moved = false
                 el.busy = false
@@ -298,7 +337,7 @@ export default {
 
           if ((me.clientY > me.initialPos.y + me.clone.offsetHeight || me.clientY < me.initialPos.y - me.clone.offsetHeight) || me.canScroll) {
             me.canScroll = true
-            scroll.handle({ clientX: me.clientX, clientY: rect2.top }, me.$refs.ul, me.opts.scrollTopEdge || me.clone.offsetHeight, me.opts.scrollLeftEdge || me.clone.offsetWidth, me.opts.scrollBottomEdge || me.clone.offsetHeight, me.opts.scrollRightEdge || me.clone.offsetWidth, me.clone.offsetHeight)
+            scroll.handle({ clientX: me.clientX, clientY: rect2.top }, me.opts.scrollContainer || me.$refs.ul, me.opts.scrollTopEdge || me.clone.offsetHeight, me.opts.scrollLeftEdge || me.clone.offsetWidth, me.opts.scrollBottomEdge || me.clone.offsetHeight, me.opts.scrollRightEdge || me.clone.offsetWidth, me.clone.offsetHeight)
           } else {
             scroll.stop()
           }
