@@ -1,6 +1,6 @@
 <template>
   <ul class="wk-ul" ref="ul">
-    <li v-for="(item) in list" @mousedown="mousedown" :key="`item-${item.id}`" :class="{ 'wk-dl-opacity-zero' : item.opacityZero }">
+    <li v-for="(item) in list" @mousedown="mousedown" :key="`item-${item.id}`" :class="{ 'wk-dl-opacity-zero' : item.opacityZero, 'wk-dl-item-width' : item.width }">
       <slot v-bind:item="item">
         {{ item[Object.keys(item)[0]] }}
       </slot>
@@ -12,7 +12,8 @@
 import WebsKitTool from 'webskit-nearest-elements'
 import WebsKitInViewport from 'webskit-is-element-in-viewport'
 import WebsKitOverlaps from 'webskit-get-overlaps-elements'
-import WebsKitAutoScroll from 'webskit-auto-scroll-on-edges'
+// import WebsKitAutoScroll from 'webskit-auto-scroll-on-edges'
+import WebsKitAutoScroll from './autoscroll'
 
 export default {
   name: 'WebskitDraggableList',
@@ -208,61 +209,42 @@ export default {
           const rect2 = me.clone.getBoundingClientRect()
           let currentIndex = me.getIndex(me.current)
 
+          let mode = {}
           if (me.opts.horizontal) {
-            if (!collideElement.busy) {
-              if (rect1.left < rect2.left && rect2.left < rect1.left + collideElement.offsetWidth / 2) {
-                if (collideElement.moved) {
-                  data.push({ index: collideIndex, side: 'INIT' })
-                } else {
-                  if (overlaps.length > 1) {
-                    data.push({ index: me.getIndex(overlaps[overlaps.length - 2]), side: 'POST' })
-                  } else {
-                    data.push({ index: collideIndex, side: 'PRE' })
-                  }
-                }
-              } else if (rect1.left + collideElement.offsetWidth / 2 < rect2.left + me.clone.offsetWidth) {
-                if (collideElement.moved && currentIndex > collideIndex) {
-                  data.push({ index: collideIndex, side: 'INIT' })
-                } else {
-                  if (overlaps.length > 1) {
-                    data.push({ index: me.getIndex(overlaps[1]), side: 'PRE' })
-                  } else {
-                    data.push({ index: collideIndex, side: 'POST' })
-                  }
-                }
-              } else if (rect2.left < rect1.left + collideElement.offsetWidth / 2) {
-                data.push({ index: collideIndex, side: 'PRE' })
-              } else if (rect1.left + collideElement.offsetWidth / 2 < rect2.left + me.clone.offsetWidth) {
-                data.push({ index: collideIndex, side: 'POST' })
-              }
-            }
+            mode.position = 'left'
+            mode.size = 'width'
+            mode.offset = 'offsetWidth'
           } else {
-            if (!collideElement.busy) {
-              if (rect1.top < rect2.top && rect2.top < rect1.top + collideElement.offsetHeight / 2) {
-                if (collideElement.moved) {
-                  data.push({ index: collideIndex, side: 'INIT' })
+            mode.position = 'top'
+            mode.size = 'height'
+            mode.offset = 'offsetHeight'
+          }
+
+          if (!collideElement.busy) {
+            if (rect1[mode.position] < rect2[mode.position] && rect2[mode.position] < rect1[mode.position] + rect1[mode.size] / 2) {
+              if (collideElement.moved) {
+                data.push({ index: collideIndex, side: 'INIT' })
+              } else {
+                if (overlaps.length > 1) {
+                  data.push({ index: me.getIndex(overlaps[overlaps.length - 2]), side: 'POST' })
                 } else {
-                  if (overlaps.length > 1) {
-                    data.push({ index: me.getIndex(overlaps[overlaps.length - 2]), side: 'POST' })
-                  } else {
-                    data.push({ index: collideIndex, side: 'PRE' })
-                  }
+                  data.push({ index: collideIndex, side: 'PRE' })
                 }
-              } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + me.clone.offsetHeight) {
-                if (collideElement.moved && currentIndex > collideIndex) {
-                  data.push({ index: collideIndex, side: 'INIT' })
-                } else {
-                  if (overlaps.length > 1) {
-                    data.push({ index: me.getIndex(overlaps[1]), side: 'PRE' })
-                  } else {
-                    data.push({ index: collideIndex, side: 'POST' })
-                  }
-                }
-              } else if (rect2.top < rect1.top + collideElement.offsetHeight / 2) {
-                data.push({ index: collideIndex, side: 'PRE' })
-              } else if (rect1.top + collideElement.offsetHeight / 2 < rect2.top + me.clone.offsetHeight) {
-                data.push({ index: collideIndex, side: 'POST' })
               }
+            } else if (rect1[mode.position] + rect1[mode.size] / 2 < rect2[mode.position] + me.clone[mode.offset]) {
+              if (collideElement.moved && currentIndex > collideIndex) {
+                data.push({ index: collideIndex, side: 'INIT' })
+              } else {
+                if (overlaps.length > 1) {
+                  data.push({ index: me.getIndex(overlaps[1]), side: 'PRE' })
+                } else {
+                  data.push({ index: collideIndex, side: 'POST' })
+                }
+              }
+            } else if (rect2[mode.position] < rect1[mode.position] + rect1[mode.size] / 2) {
+              data.push({ index: collideIndex, side: 'PRE' })
+            } else if (rect1[mode.position] + rect1[mode.size] / 2 < rect2[mode.position] + me.clone[mode.offset]) {
+              data.push({ index: collideIndex, side: 'POST' })
             }
           }
 
@@ -335,9 +317,16 @@ export default {
             })
           }
 
-          if ((me.clientY > me.initialPos.y + me.clone.offsetHeight || me.clientY < me.initialPos.y - me.clone.offsetHeight) || me.canScroll) {
+          let checkScrollLimit
+          if (me.opts.horizontal) {
+            checkScrollLimit = (me.clientX > me.initialPos.x + rect2.width || me.clientX < me.initialPos.x - rect2.width)
+          } else {
+            checkScrollLimit = (me.clientY > me.initialPos.y + rect2.height || me.clientY < me.initialPos.y - rect2.height)
+          }
+
+          if (checkScrollLimit || me.canScroll) {
             me.canScroll = true
-            scroll.handle({ clientX: me.clientX, clientY: rect2.top }, me.opts.scrollContainer || me.$refs.ul, me.opts.scrollTopEdge || me.clone.offsetHeight, me.opts.scrollLeftEdge || me.clone.offsetWidth, me.opts.scrollBottomEdge || me.clone.offsetHeight, me.opts.scrollRightEdge || me.clone.offsetWidth, me.clone.offsetHeight)
+            scroll.handle({ clientX: rect2.left, clientY: rect2.top }, me.opts.scrollContainer || me.$refs.ul, me.opts.scrollTopEdge || rect2.height, me.opts.scrollLeftEdge || rect2.width, me.opts.scrollBottomEdge || rect2.height, me.opts.scrollRightEdge || rect2.width, rect2.height, rect2.width)
           } else {
             scroll.stop()
           }

@@ -24,7 +24,7 @@ export default {
         { id: 1, name: 'Item 1' },
         { id: 2, name: 'Item 2', isComplete: true },
         { id: 3, name: 'Item 3' },
-        { id: 4, name: 'Item 4' },
+        { id: 4, name: 'Item 4', width: true },
         { id: 5, name: 'Item 5' },
         { id: 6, name: 'Item 6' },
         { id: 7, name: 'Item 7' },
@@ -89,31 +89,25 @@ export default {
         width: 500px;
         max-height: 300px;
         overflow: auto;
-        display: flex;
-
-        li {
-            box-sizing: border-box;
-        }
+        white-space: nowrap;
     }
 
     li {
+        box-sizing: border-box;
         list-style-type: none;
         z-index: 0;
         transition: 300ms;
         pointer-events: all;
-        display: flex;
-        -webkit-box-align: center;
-        -ms-flex-align: center;
-        align-items: center;
-        width: 100%;
         padding: 20px;
         background-color: #fff;
         border-bottom: 1px solid #efefef;
-        box-sizing: border-box;
         user-select: none;
         color: #333;
         font-weight: 400;
         white-space: nowrap;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
     }
 
     .list-B-drag-handle {
@@ -121,5 +115,9 @@ export default {
         height: 20px;
         margin-right: 10px;
         background-color: #2c3e50;
+    }
+
+    .wk-dl-item-width {
+        width: 200px;
     }
 </style>
