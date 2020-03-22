@@ -42,7 +42,9 @@ export default {
         accepts: [],
         lockAxis: false,
         disableRemoteDrop: false,
-        dragHandle: false
+        dragHandle: false,
+        cloneClass: 'wk-dl-clone--custom',
+        cloneTransition: '300ms linear'
       }
     }
   },
@@ -96,14 +98,14 @@ export default {
       }
 
       const checker = async () => {
-        if (document.querySelector('.wk-dl-clone')) {
-          let o = WebsKitOverlaps.getOverlaps(document.querySelector('.wk-dl-clone'), document.querySelectorAll('ul:not(.wk-dl-ul-active)'))
+        if (document.querySelector('.wk-dl-clone--active')) {
+          let o = WebsKitOverlaps.getOverlaps(document.querySelector('.wk-dl-clone--active'), document.querySelectorAll('ul:not(.wk-dl-ul-active)'))
           if (o.length === 1) {
-            if (o[0] === me.$refs.ul && !me.opts.disableRemoteDrop && me.opts.accepts.find(w => w === document.querySelector('.wk-dl-clone').listData.widgetID)) {
+            if (o[0] === me.$refs.ul && !me.opts.disableRemoteDrop && me.opts.accepts.find(w => w === document.querySelector('.wk-dl-clone--active').listData.widgetID)) {
               if (!me.dummyInserted) {
                 me.blocked = true
                 me.listBackup = JSON.stringify(me.list)
-                let data = JSON.parse(document.querySelector('.wk-dl-clone').nodeData)
+                let data = JSON.parse(document.querySelector('.wk-dl-clone--active').nodeData)
                 data.opacityZero = true
                 await me.list.push(data)
                 me.$nextTick(() => {
@@ -114,17 +116,17 @@ export default {
                 me.dragging = true
                 multi = true
                 me.initialPos = { x: 0, y: 0 }
-                me.clone = document.querySelector('.wk-dl-clone')
+                me.clone = document.querySelector('.wk-dl-clone--active')
                 me.current = me.getElementByIndex(me.list.length - 1)
                 me.current.classList.add('wk-dl-current')
               }
-            } else if (o[0] && o[0].listData && o[0].listData.accepts && !o[0].listData.disableRemoteDrop && o[0].listData.accepts.find(w => w === document.querySelector('.wk-dl-clone').listData.widgetID)) {
+            } else if (o[0] && o[0].listData && o[0].listData.accepts && !o[0].listData.disableRemoteDrop && o[0].listData.accepts.find(w => w === document.querySelector('.wk-dl-clone--active').listData.widgetID)) {
               linkList = true
             }
           } else {
             multi = false
             linkList = false
-            if (!me.$refs.ul.classList.contains('wk-dl-ul-active')) {
+            if (me.$refs.ul && !me.$refs.ul.classList.contains('wk-dl-ul-active')) {
               multi = false
               scroll.stop()
               me.dragging = false;
@@ -330,7 +332,7 @@ export default {
           me.$emit('origin-update', me.current, me.list, me.list[me.getIndex(me.current)])
           return
         }
-        if (!me.dragging) {
+        if (!me.dragging && me.$refs.ul) {
           if (me.dummyInserted) {
             me.$set(me, 'list', JSON.parse(me.listBackup))
             me.dummyInserted = false
@@ -347,15 +349,18 @@ export default {
           })
           return
         }
-        me.clone.classList.remove('wk-dl-clone')
-        me.clone.style.position = `fixed`
+
         me.dragging = false
+
+        let cloneRect = me.clone.getBoundingClientRect()
+        me.clone.style.transform = `translate3d(${cloneRect.left - parseFloat(me.clone.style.left)}px, ${cloneRect.top - parseFloat(me.clone.style.top)}px, 0px)`
 
         let currentIndex = me.getIndex(me.current)
         if (finalIndex === undefined) finalIndex = currentIndex
         me.update(currentIndex, finalIndex)
 
         me.$nextTick(() => {
+          me.clone.classList.remove('wk-dl-clone--active');
           [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
             el.busy = false
             el.moved = false
@@ -373,25 +378,26 @@ export default {
           me.canScroll = false
           current.style.visibility = `hidden`
           current.style.opacity = `0`
-          me.clone.style.top = `0`
-          me.clone.style.left = `0`
-          me.clone.style.transition = `150ms linear`
-          me.clone.addEventListener('transitionend', function () {
-            current.style.transitionDuration = `0s`
-            current.style.visibility = ``
-            current.style.opacity = ``
-            setTimeout(() => {
-              current.style.transitionDuration = ``
-              me.clone && me.clone.parentNode && document.body.removeChild(me.clone)
-            }, 1)
-          }, false)
-          let originalRect = current.getBoundingClientRect()
-          me.clone.style.transform = `translate3d(${originalRect.left}px, ${originalRect.top}px, 0px)`
-          me.setTransitionEnd()
-          if (currentIndex !== finalIndex) {
-            me.$emit('input', JSON.parse(JSON.stringify(me.list)))
-            me.$emit('drop', current, me.list, me.list[me.getIndex(current)])
-          }
+
+          me.$nextTick(() => {
+            me.clone.style.transition = me.opts.cloneTransition
+            me.clone.addEventListener('transitionend', function () {
+              current.style.transitionDuration = `0s`
+              current.style.visibility = ``
+              current.style.opacity = ``
+              setTimeout(() => {
+                current.style.transitionDuration = ``
+                me.clone && me.clone.parentNode && document.body.removeChild(me.clone)
+              }, 1)
+            }, false)
+            let originalRect = current.getBoundingClientRect()
+            me.clone.style.transform = `translate3d(${originalRect.left - parseFloat(me.clone.style.left)}px, ${originalRect.top - parseFloat(me.clone.style.top)}px, 0px)`
+            me.setTransitionEnd()
+            if (currentIndex !== finalIndex) {
+              me.$emit('input', JSON.parse(JSON.stringify(me.list)))
+              me.$emit('drop', current, me.list, me.list[me.getIndex(current)])
+            }
+          })
         })
       })
 
@@ -434,7 +440,12 @@ export default {
         target = target.closest('LI')
       }
 
-      me.$emit('element-mousedown', target, me.list[me.getIndex(target)])
+      me.$emit('element-mousedown', target, me.list[me.getIndex(target)]);
+
+      [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
+        el.style.visibility = ``
+        el.style.opacity = ``
+      })
 
       me.$refs.ul.classList.add('wk-dl-ul-active');
       [].forEach.call(document.querySelectorAll('.wk-dl-clone'), el => {
@@ -445,7 +456,9 @@ export default {
       me.clientY = e.clientY
       const rect = me.current.getBoundingClientRect()
       me.clone = target.cloneNode(true)
+      me.clone.classList.add(me.opts.cloneClass)
       me.clone.classList.add('wk-dl-clone')
+      me.clone.classList.add('wk-dl-clone--active')
       me.clone.style.top = `${rect.top}px`
       me.clone.style.left = `${rect.left}px`
       me.clone.style.width = `${me.current.offsetWidth}px`
@@ -481,9 +494,10 @@ export default {
 
 <style lang="scss">
   .wk-dl-clone {
-    position: fixed;
+    z-index: 999999999 !important;
+    position: fixed !important;
     transition: none;
-    pointer-events: none;
+    pointer-events: none !important;
   }
 
   .wk-dl-current {

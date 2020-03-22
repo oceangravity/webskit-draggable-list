@@ -11,7 +11,6 @@
                 <strong>{{ item.name }}</strong>
             </template>
         </webskit-draggable-list>
-        <input type="button" @mousedown="changeProp" value="change prop">
     </div>
 </template>
 
@@ -106,7 +105,7 @@ export default {
     }
 
     .wk-ul {
-        margin: 0 100px;
+        margin: 0 50px;
     }
 
     ul {
@@ -115,7 +114,7 @@ export default {
         border: 1px solid #efefef;
         margin: 0 auto;
         padding: 0;
-        width: 500px;
+        width: 300px;
         max-height: 300px;
         overflow: auto;
 
