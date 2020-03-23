@@ -100,7 +100,6 @@ export default {
         pointer-events: all;
         padding: 20px;
         background-color: #fff;
-        border-bottom: 1px solid #efefef;
         user-select: none;
         color: #333;
         font-weight: 400;
@@ -108,6 +107,8 @@ export default {
         display: inline-flex;
         justify-content: center;
         align-items: center;
+        border: solid 1px lightblue;
+        /* margin: 0 20px; */
     }
 
     .list-B-drag-handle {

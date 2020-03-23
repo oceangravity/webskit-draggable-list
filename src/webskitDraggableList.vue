@@ -191,11 +191,7 @@ export default {
             return
           }
 
-          if (me.getIndex(me.current) > me.getIndex(o.el)) {
-            o = WebsKitTool.getNearestAndFurthestElements(elements, x, y).nearest
-          } else {
-            o = WebsKitTool.getNearestAndFurthestElements(elements, me.opts.horizontal ? x + me.clone.offsetWidth / 2 : x, !me.opts.horizontal ? y + me.clone.offsetHeight / 2 : y).nearest
-          }
+          o = WebsKitTool.getNearestAndFurthestElements(elements, me.opts.horizontal ? x + me.clone.offsetWidth / 2 : x, !me.opts.horizontal ? y + me.clone.offsetHeight / 2 : y).nearest
 
           let overlaps = WebsKitOverlaps.getOverlaps(me.clone, elements)
 
@@ -221,30 +217,20 @@ export default {
           }
 
           if (!collideElement.busy) {
-            if (rect1[mode.position] < rect2[mode.position] && rect2[mode.position] < rect1[mode.position] + rect1[mode.size] / 2) {
-              if (collideElement.moved) {
-                data.push({ index: collideIndex, side: 'INIT' })
+            if (rect1[mode.position] + rect1[mode.size] / 2 > rect2[mode.position] && rect2[mode.position] + rect2[mode.size] > rect1[mode.position] + rect1[mode.size] / 2) {
+              if (currentIndex < collideIndex) {
+                if (collideElement.moved) {
+                  data.push({ index: collideIndex, side: 'INIT' })
+                } else {
+                  data.push({ index: collideIndex, side: 'POST' })
+                }
               } else {
-                if (overlaps.length > 1) {
-                  data.push({ index: me.getIndex(overlaps[overlaps.length - 2]), side: 'POST' })
+                if (collideElement.moved) {
+                  data.push({ index: collideIndex, side: 'INIT' })
                 } else {
                   data.push({ index: collideIndex, side: 'PRE' })
                 }
               }
-            } else if (rect1[mode.position] + rect1[mode.size] / 2 < rect2[mode.position] + me.clone[mode.offset]) {
-              if (collideElement.moved && currentIndex > collideIndex) {
-                data.push({ index: collideIndex, side: 'INIT' })
-              } else {
-                if (overlaps.length > 1) {
-                  data.push({ index: me.getIndex(overlaps[1]), side: 'PRE' })
-                } else {
-                  data.push({ index: collideIndex, side: 'POST' })
-                }
-              }
-            } else if (rect2[mode.position] < rect1[mode.position] + rect1[mode.size] / 2) {
-              data.push({ index: collideIndex, side: 'PRE' })
-            } else if (rect1[mode.position] + rect1[mode.size] / 2 < rect2[mode.position] + me.clone[mode.offset]) {
-              data.push({ index: collideIndex, side: 'POST' })
             }
           }
 
