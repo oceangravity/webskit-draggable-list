@@ -47,7 +47,8 @@ export default {
         dragHandle: false,
         horizontal: false,
         cloneClass: 'wk-dl-clone--custom',
-        cloneTransition: '300ms linear'
+        cloneTransition: '300ms linear',
+        disableDragFromChildElements: false
       }
     }
   },
@@ -446,12 +447,16 @@ export default {
 
       if (me.opts.dragHandle && !target.classList.contains(me.opts.dragHandle)) {
         return
-      } else if (!me.opts.dragHandle && me.getIndex(target) < 0) {
+      } else if (!me.opts.dragHandle && me.opts.disableDragFromChildElements) {
         return
       }
 
       if (me.opts.dragHandle) {
         target = target.closest('LI')
+      } else {
+        if (target.tagName !== 'LI') {
+          target = target.closest('LI')
+        }
       }
 
       me.$emit('element-mousedown', target, me.list[me.getIndex(target)]);
