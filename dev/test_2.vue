@@ -26,7 +26,8 @@ export default {
   data () {
     return {
       options_A: {
-        widgetID: 'list-A'
+        widgetID: 'list-A',
+        disableDragFromChildElements: true
       },
       options_B: {
         widgetID: 'list-B'

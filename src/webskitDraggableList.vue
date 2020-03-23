@@ -12,8 +12,7 @@
 import WebsKitTool from 'webskit-nearest-elements'
 import WebsKitInViewport from 'webskit-is-element-in-viewport'
 import WebsKitOverlaps from 'webskit-get-overlaps-elements'
-// import WebsKitAutoScroll from 'webskit-auto-scroll-on-edges'
-import WebsKitAutoScroll from './autoscroll'
+import WebsKitAutoScroll from 'webskit-auto-scroll-on-edges'
 
 export default {
   name: 'WebskitDraggableList',
@@ -448,7 +447,9 @@ export default {
       if (me.opts.dragHandle && !target.classList.contains(me.opts.dragHandle)) {
         return
       } else if (!me.opts.dragHandle && me.opts.disableDragFromChildElements) {
-        return
+        if (me.getIndex(target) < 0) {
+          return
+        }
       }
 
       if (me.opts.dragHandle) {
