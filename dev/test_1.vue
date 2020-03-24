@@ -11,6 +11,12 @@
                 <strong>{{ item.name }}</strong>
             </template>
         </webskit-draggable-list>
+        <webskit-draggable-list v-model="list_A" :options="options_C">
+            <template slot-scope="{ item }">
+                <div class="list-B-drag-handle"></div>
+                <strong>{{ item.name }}</strong>
+            </template>
+        </webskit-draggable-list>
     </div>
 </template>
 
@@ -27,7 +33,12 @@ export default {
       },
       options_B: {
         widgetID: 'list-B',
-        accepts: ['list-A'],
+        accepts: ['list-A', 'list-C'],
+        dragHandle: 'list-B-drag-handle'
+      },
+      options_C: {
+        widgetID: 'list-C',
+        accepts: ['list-B'],
         dragHandle: 'list-B-drag-handle'
       },
       list_A: [

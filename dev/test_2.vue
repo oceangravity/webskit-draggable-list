@@ -9,7 +9,7 @@
                 </p>
             </template>
         </webskit-draggable-list>
-        <webskit-draggable-list v-model="list_B" :options="options_B">
+        <webskit-draggable-list v-model="list_A" :options="options_B">
             <template slot-scope="{ item }">
                 {{ item.name }} <strong style="padding-left: 10px"> {{ item.value ? item.value : 0 }}</strong>
             </template>

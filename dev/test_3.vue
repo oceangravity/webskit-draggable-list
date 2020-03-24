@@ -18,7 +18,8 @@ export default {
       options_A: {
         widgetID: 'list-A',
         accepts: ['list-B'],
-        horizontal: true
+        horizontal: true,
+        lockAxis: 'y'
       },
       list_A: [
         { id: 1, name: 'Item 1' },

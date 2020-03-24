@@ -1,6 +1,6 @@
 {
   "name": "webskit-draggable-list",
-  "version": "1.0.16",
+  "version": "1.0.19",
   "description": "Vue Draggable List",
   "main": "dist/webskitDraggableList.umd.js",
   "module": "dist/webskitDraggableList.esm.js",

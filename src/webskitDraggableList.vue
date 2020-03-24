@@ -1,6 +1,6 @@
 <template>
   <ul class="wk-ul" ref="ul">
-    <li v-for="(item) in list" @mousedown="mousedown" :key="`item-${item.id}`" :class="{ 'wk-dl-opacity-zero' : item.opacityZero, 'wk-dl-item-width' : item.width }">
+    <li v-for="(item) in list" @mousedown="mousedown" :key="`item-${item.id}`">
       <slot v-bind:item="item">
         {{ item[Object.keys(item)[0]] }}
       </slot>
@@ -18,7 +18,6 @@ export default {
   name: 'WebskitDraggableList',
   data () {
     return {
-      list: [],
       blocked: true,
       canScroll: false,
       current: null,
@@ -32,6 +31,7 @@ export default {
       listBackup: '',
       opts: {},
       dragEventFired: false,
+      linkList: false,
       defaultOptions: {
         scrollTopEdge: false,
         scrollBottomEdge: false,
@@ -62,7 +62,6 @@ export default {
   },
   mounted () {
     const me = this
-    me.list = [...me.value]
 
     if (!me.options.widgetID) console.warn('WebsKit Draggable List: widgetID value is required ')
 
@@ -73,7 +72,7 @@ export default {
       let finalIndex
       let data = []
       let multi = false
-      let linkList = false
+      me.linkList = false
       let scroll = new WebsKitAutoScroll()
 
       me.setTransitionEnd()
@@ -109,26 +108,36 @@ export default {
                 me.blocked = true
                 me.listBackup = JSON.stringify(me.list)
                 let data = JSON.parse(document.querySelector('.wk-dl-clone--active').nodeData)
-                data.opacityZero = true
-                await me.list.push(data)
+                let clone = document.querySelector('.wk-dl-clone--active').cloneNode(true)
+                clone.nodeData = data
+                clone.classList.add('wk-dl-current', 'wk-dl-delete')
+                clone.classList.remove('wk-dl-clone--active', 'wk-dl-clone--custom', 'wk-dl-clone')
+                clone.style.left = ''
+                clone.style.top = ''
+                clone.style.width = ''
+                clone.style.height = ''
+                clone.style.transform = ''
+
+                me.$refs.ul.appendChild(clone)
+
+                // await me.list.push(data)
                 me.$nextTick(() => {
                   me.dummyInserted = true
                 })
               } else {
-                me.$delete(me.list[me.list.length - 1], 'opacityZero')
+                me.blocked = true
                 me.dragging = true
                 multi = true
                 me.initialPos = { x: 0, y: 0 }
                 me.clone = document.querySelector('.wk-dl-clone--active')
-                me.current = me.getElementByIndex(me.list.length - 1)
-                me.current.classList.add('wk-dl-current')
+                me.current = me.$refs.ul.querySelector('.wk-dl-current')
               }
             } else if (o[0] && o[0].listData && o[0].listData.accepts && !o[0].listData.disableRemoteDrop && o[0].listData.accepts.find(w => w === document.querySelector('.wk-dl-clone--active').listData.widgetID)) {
-              linkList = true
+              me.linkList = true
             }
           } else {
             multi = false
-            linkList = false
+            me.linkList = false
             if (me.$refs.ul && !me.$refs.ul.classList.contains('wk-dl-ul-active')) {
               multi = false
               scroll.stop()
@@ -326,15 +335,15 @@ export default {
         me.dragEventFired = false
         scroll.stop()
 
-        if (linkList) {
-          linkList = false
+        if (me.linkList && me.$refs.ul.classList.contains('wk-dl-ul-active')) {
+          me.linkList = false
           multi = false
           me.dragging = false
           me.dummyInserted = false
           me.canScroll = false
           me.$refs.ul.classList.remove('wk-dl-ul-active')
           let currentIndex = me.getIndex(me.current)
-          this.list.splice(currentIndex, 1);
+          me.list.splice(currentIndex, 1);
           [].forEach.call(me.$refs.ul.querySelectorAll('li'), (el) => {
             el.busy = false
             el.moved = false
@@ -342,10 +351,10 @@ export default {
             el.style.transform = ``
           })
           me.setTransitionEnd()
-          me.$emit('input', JSON.parse(JSON.stringify(me.list)))
           me.$emit('origin-update', me.current, me.list, me.list[me.getIndex(me.current)])
           return
         }
+
         if (!me.dragging && me.$refs.ul) {
           if (me.dummyInserted) {
             me.$set(me, 'list', JSON.parse(me.listBackup))
@@ -371,7 +380,16 @@ export default {
 
         let currentIndex = me.getIndex(me.current)
         if (finalIndex === undefined) finalIndex = currentIndex
-        me.update(currentIndex, finalIndex)
+
+        if (multi) {
+          me.insert(finalIndex)
+        } else {
+          me.update(currentIndex, finalIndex)
+        }
+
+        [].forEach.call(document.querySelectorAll('.wk-dl-delete'), el => {
+          el.parentNode.removeChild(el)
+        })
 
         me.$nextTick(() => {
           me.clone.classList.remove('wk-dl-clone--active');
@@ -387,7 +405,6 @@ export default {
           })
           let current = me.getElementByIndex(finalIndex)
           me.$refs.ul.classList.remove('wk-dl-ul-active')
-          multi = false
           me.dummyInserted = false
           me.canScroll = false
           current.style.visibility = `hidden`
@@ -408,7 +425,7 @@ export default {
             me.clone.style.transform = `translate3d(${originalRect.left - parseFloat(me.clone.style.left)}px, ${originalRect.top - parseFloat(me.clone.style.top)}px, 0px)`
             me.setTransitionEnd()
             if (currentIndex !== finalIndex) {
-              me.$emit('input', JSON.parse(JSON.stringify(me.list)))
+              multi = false
               me.$emit('drop', current, me.list, me.list[me.getIndex(current)])
             }
           })
@@ -436,6 +453,9 @@ export default {
   methods: {
     update (from, to) {
       this.list.splice(to, 0, this.list.splice(from, 1)[0])
+    },
+    insert (to) {
+      this.list.splice(to, 0, JSON.parse(JSON.stringify(this.current.nodeData)))
     },
     getElementByIndex (index) {
       return [...this.$refs.ul.querySelectorAll('li')][index]
@@ -508,6 +528,13 @@ export default {
     }
   },
   computed: {
+    list: {
+      get () {
+        return this.value
+      },
+      set (data) {
+      }
+    }
   }
 }
 </script>
@@ -525,9 +552,5 @@ export default {
     pointer-events: none;
     visibility: hidden;
     opacity: 0;
-  }
-
-  .wk-dl-opacity-zero {
-    opacity: 0 !important;
   }
 </style>
