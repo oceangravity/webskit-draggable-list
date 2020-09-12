@@ -4,6 +4,7 @@
   "description": "Vue Draggable List",
   "author": "Juan Carlos Galindo Navarro",
   "scripts": {
+    "netlify": "vue-cli-service build 'dev/main.js'",
     "serve": "vue-cli-service serve src/webskitDraggableList.vue --port 8081",
     "build": "npm run build:umd & npm run build:es & npm run build:unpkg",
     "build:es": "rollup --config build/rollup.config.js --format es --file dist/webskitDraggableList.esm.js",
