@@ -35,15 +35,18 @@ export default {
   },
   watch: {
     list_A: function (data) {
+      // eslint-disable-next-line no-console
       console.log(JSON.stringify(data))
     }
   },
   components: { webskitDraggableList },
   methods: {
     startDrag (a, b) {
+      // eslint-disable-next-line no-console
       console.log(a, b)
     },
     drop (a, b, c) {
+      // eslint-disable-next-line no-console
       console.log(a, b, c)
     }
   }

@@ -64,9 +64,11 @@ export default {
   },
   watch: {
     list_A: function (data) {
+      // eslint-disable-next-line no-console
       console.log(JSON.stringify(data))
     },
     list_B: function (data) {
+      // eslint-disable-next-line no-console
       console.log(JSON.stringify(data))
     }
   },
@@ -74,7 +76,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
     html, body {
         font-family: Montserrat, Helvetica Neue, Helvetica, arial, sans-serif;
         -webkit-font-smoothing: antialiased;

@@ -1,6 +1,6 @@
 <template>
     <div id="app">
-        <webskit-draggable-list v-model="list_A" :options="options_A" @start-drag="startDrag" @drop="drop">
+        <webskit-draggable-list v-model="list_A" class="lock-axis test" :options="options_A" @start-drag="startDrag" @drop="drop">
             <template slot-scope="{ item }">
                 <strong>{{ item.name }}</strong>
             </template>
@@ -37,15 +37,18 @@ export default {
   },
   watch: {
     list_A: function (data) {
+      // eslint-disable-next-line no-console
       console.log(JSON.stringify(data))
     }
   },
   components: { webskitDraggableList },
   methods: {
     startDrag (a, b) {
+      // eslint-disable-next-line no-console
       console.log(a, b)
     },
     drop (a, b, c) {
+      // eslint-disable-next-line no-console
       console.log(a, b, c)
     }
   }
@@ -81,19 +84,19 @@ export default {
         margin: 0 100px;
     }
 
-    ul {
-        position: relative;
-        background-color: #f3f3f3;
-        border: 1px solid #efefef;
-        margin: 0 auto;
-        padding: 0;
-        width: 500px;
-        max-height: 300px;
-        overflow: auto;
-        white-space: nowrap;
-    }
+    ul.lock-axis {
+      position: relative;
+      background-color: #f3f3f3;
+      border: 1px solid #efefef;
+      margin: 0 auto;
+      padding: 0;
+      width: 500px;
+      max-height: 300px;
+      overflow: auto;
+      white-space: nowrap;
 
-    li {
+      li {
+        font-family: "Avenir", Helvetica, Arial, sans-serif;
         box-sizing: border-box;
         list-style-type: none;
         z-index: 0;
@@ -109,17 +112,23 @@ export default {
         justify-content: center;
         align-items: center;
         border: solid 1px lightblue;
-        /* margin: 0 20px; */
+        width: auto;
+      }
     }
 
-    .list-B-drag-handle {
-        width: 20px;
-        height: 20px;
-        margin-right: 10px;
-        background-color: #2c3e50;
-    }
-
-    .wk-dl-item-width {
-        width: 200px;
+    .wk-dl-clone {
+      font-family: "Avenir", Helvetica, Arial, sans-serif;
+      box-sizing: border-box;
+      list-style-type: none;
+      z-index: 0;
+      pointer-events: all;
+      padding: 20px;
+      background-color: #fff;
+      user-select: none;
+      color: #333;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      border: solid 1px lightblue;
     }
 </style>

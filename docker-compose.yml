@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+
+  frontend:
+    build:
+      context: .
+      target: 'develop-stage'
+      args:
+        NODE_ENV: development
+    ports:
+      - '8081:8081'
+    volumes:
+      - /home/app/webskit-cmp/node_modules
+      - .:/home/app/webskit-cmp
+    stdin_open: true
+    tty: true
+    restart: always
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - npm_config_unsafe_perm=true

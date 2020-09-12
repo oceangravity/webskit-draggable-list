@@ -69,9 +69,11 @@ export default {
   },
   watch: {
     list_A: function (data) {
+      // eslint-disable-next-line no-console
       console.log(JSON.stringify(data))
     },
     list_B: function (data) {
+      // eslint-disable-next-line no-console
       console.log(JSON.stringify(data))
     }
   },
@@ -81,16 +83,18 @@ export default {
       this.$set(this.options_B, 'disableRemoteDrop', !this.options_B.disableRemoteDrop)
     },
     startDrag (a, b) {
+      // eslint-disable-next-line no-console
       console.log(a, b)
     },
     drop (a, b, c) {
+      // eslint-disable-next-line no-console
       console.log(a, b, c)
     }
   }
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
     html, body {
         font-family: Montserrat, Helvetica Neue, Helvetica, arial, sans-serif;
         -webkit-font-smoothing: antialiased;

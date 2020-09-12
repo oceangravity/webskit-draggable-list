@@ -35,4 +35,9 @@ README.md
 test.js
 vue.config.js
 yarn.lock
+docker-compose.yml
+Dockerfile
+start.sh
+yarn-error.log
+
 
