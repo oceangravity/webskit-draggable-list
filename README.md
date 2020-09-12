@@ -6,7 +6,7 @@ Simple but elegant draggable list made with Vue.
 
 ## Demo
 
-Under construction
+https://webskit-draggable-list.netlify.app
 
 ## NPM Update
 
