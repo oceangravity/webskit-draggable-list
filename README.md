@@ -8,6 +8,12 @@ Simple but elegant draggable list made with Vue.
 
 Under construction
 
+## NPM Update
+
+npm version minor
+npm login
+npm publish
+
 ## Usage
 
 Under construction
